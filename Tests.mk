@@ -43,7 +43,9 @@ paths:
 
 ###############################################################################
 
-$(TARGET): $(OBJS)
+$(TARGET): $(BUILD)/$(TARGET)
+
+$(BUILD)/$(TARGET): $(OBJS)
 	@echo "\nLinking main test executable..."
 	$(CC) $(CFLAGS) $(INCLUDES) -o $(BUILD)/$(TARGET) $^ $(LDFLAGS)
 	@echo "Done."

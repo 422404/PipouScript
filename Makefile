@@ -28,9 +28,9 @@ LDFLAGS  :=
 
 ###############################################################################
 
-.PHONY: all clean paths tests doc
+.PHONY: all clean paths tests doc $(TARGET)
 
-all: $(TARGET) doc
+all: $(TARGET) tests doc
 
 clean:
 	@rm -Rf $(BUILD)
@@ -48,9 +48,11 @@ doc:
 
 ###############################################################################
 
-$(TARGET): $(OBJS)
+$(TARGET): $(BUILD)/$(TARGET)
+
+$(BUILD)/$(TARGET): $(OBJS)
 	@echo "\nLinking main executable..."
-	$(CC) $(CFLAGS) $(INCLUDES) -o $(BUILD)/$@ $^ $(LDFLAGS)
+	$(CC) $(CFLAGS) $(INCLUDES) -o $(BUILD)/$(TARGET) $^ $(LDFLAGS)
 	@echo "Done."
 
 $(OBJS): $(SOURCES)
