@@ -1,6 +1,6 @@
 /**
  * @file lexer.h
- * Lexer
+ * Input lexical analysis
  */
 #pragma once
 #include <sys/types.h>

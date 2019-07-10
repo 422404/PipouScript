@@ -5,8 +5,8 @@
 #pragma once
 
 /**
- * Starts the Read-Eval-Print-Loop
- * @retval 0 if returning because the user requested it
- * @retval Non-zero if an error caused the termination of the loop 
+ * Puts the interpreter in REPL mode and waits for input
+ * @retval 0 on termination without error
+ * @retval Non-zero on failure
  */
 int EvalLoop();

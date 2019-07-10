@@ -1,6 +1,6 @@
 /**
  * @file parser.h
- * Parser
+ * Input parsing
  */
 #pragma once
 #include "lexer.h"

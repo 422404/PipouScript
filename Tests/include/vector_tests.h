@@ -1,3 +1,10 @@
+/**
+ * @file vector_tests.h
+ * Vector tests
+ */
 #pragma once
 
-void Test_VectorCreation(void);
+/**
+ * Runs all the vector tests
+ */
+void Test_VectorTests(void);
