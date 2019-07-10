@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>PipouScript Grammar</title>
+        <meta charset="utf-8" />
+        <link rel="stylesheet" href="node_modules/railroad-diagrams/railroad-diagrams.css" />
+        <link rel="stylesheet" href="../style.css" />
+        <style>
+            section svg {
+                margin: auto;
+                display: block;
+                max-width: 100%;
+            }
+
+            section h2 {
+                margin: 1em auto 0px 2em;
+            }
+        </style>
+        <script src="node_modules/railroad-diagrams/railroad-diagrams.js"></script>
+        <script src="grammar.js"></script>
+    </head>
+
+    <body>
+        <section>
+            <h1>Smalltalk-esque lang with prototypal inheritance</h1>
+            <hr>
+        </section>
+        <section>
+            <h1>Tokens:</h1>
+
+            <h2 id="letter">Letter</h2>
+            <div id="letter-diagram"></div>
+
+            <h2 id="identifier">Identifier</h2>
+            <div id="identifier-diagram"></div>
+
+            <h2 id="integer">Integer</h2>
+            <div id="integer-diagram"></div>
+
+            <h2 id="double">Double</h2>
+            <div id="double-diagram"></div>
+
+            <h2 id="string">String</h2>
+            <div id="string-diagram"></div>
+            <hr>
+        </section>
+
+        <section>
+            <h1>Grammar:</h1>
+
+            <h2 id="array">Array</h2>
+            <div id="array-diagram"></div>
+
+            <h2 id="object-field-name">Object field name</h2>
+            <div id="object-field-name-diagram"></div>
+
+            <h2 id="object-message-name">Object message name</h2>
+            <div id="object-message-name-diagram"></div>
+
+            <h2 id="object-field-init">Object field init</h2>
+            <div id="object-field-init-diagram"></div>
+
+            <h2 id="function-definition">Function definition</h2>
+            <div id="function-definition-diagram"></div>
+
+            <h2 id="object">Object</h2>
+            <div id="object-diagram"></div>
+
+            <h2 id="block">Block</h2>
+            <div id="block-diagram"></div>
+
+            <h2 id="block-params">Block params</h2>
+            <div id="block-params-diagram"></div>
+
+            <h2 id="atom-expression">Atom expression</h2>
+            <div id="atom-expression-diagram"></div>
+        </section>
+    </body>
+</html>

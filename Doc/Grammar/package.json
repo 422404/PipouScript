@@ -1,0 +1,11 @@
+{
+  "name": "pipouscript-grammar-doc",
+  "version": "1.0.0",
+  "description": "",
+  "main": "grammar.js",
+  "author": "422404",
+  "license": "MIT",
+  "dependencies": {
+    "railroad-diagrams": "git+https://github.com/tabatkins/railroad-diagrams.git"
+  }
+}

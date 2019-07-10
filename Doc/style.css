@@ -1,0 +1,24 @@
+body {
+    background-color: hsl(30,20%,95%);
+    color: #333333;
+}
+
+section {
+    width: 80%;
+    margin: auto;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    font-size: 1em;
+    margin-bottom: 2em;
+}
+
+section h1 {
+    font-size: 1.5em;
+}
+
+section h2 {
+    font-size: 1.2em;
+}
+
+section hr {
+    margin-top: 2em;
+}
