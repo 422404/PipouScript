@@ -4,12 +4,14 @@
  */
 #include "seatest.h"
 #include "vector_tests.h"
+#include "iterator_tests.h"
 
 /**
  * Runs all tests
  */
 void Test_AllTests(void) {
     Test_VectorTests();
+    Test_IteratorTests();
 }
 
 /**
