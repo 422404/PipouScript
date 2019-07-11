@@ -36,7 +36,10 @@ static void * next(iterator_t * iterator) {
     return res;
 }
 
-static void Test_IteratorCreation(void) {
+/**
+ * Tests the creation of an iterator
+ */
+void Test_IteratorCreation(void) {
     test_iterator_source_t source;
     iterator_t * iterator;
 
@@ -47,7 +50,10 @@ static void Test_IteratorCreation(void) {
     Iter_Free(iterator);
 }
 
-static void Test_IteratorIterating(void) {
+/**
+ * Tests the usage of some iterator implementation
+ */
+void Test_IteratorIterating(void) {
     test_iterator_source_t source = {
         {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, 0
     };
