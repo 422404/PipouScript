@@ -1,0 +1,18 @@
+# Whitespaces
+SPACE                 ' '
+TAB                   '\t'
+NEWLINE
+
+# Tokens
+EQ                    '='
+PLUS                  '+'
+MINUS                 '-'
+TIMES                 '*'
+DIV                   '/'
+MOD                   '%'
+
+# Special tokens
+IDENT
+STRING
+INT
+DOUBLE

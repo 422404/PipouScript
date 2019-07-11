@@ -4,7 +4,9 @@
  */
 #pragma once
 #include <sys/types.h>
+#include <stdbool.h>
 #include "misc.h"
+#include "tokens.h"
 
 /**
  * Represents a position in the source code
@@ -40,7 +42,7 @@ typedef struct {
  */
 typedef struct {
     /** Token type */
-    int type;
+    token_type_t type;
 
     /** Token span */
     span_t span;
@@ -72,7 +74,7 @@ typedef struct {
     char * token_start;
 
     /** Hypothetical type of the token to be matched */
-    int token_type;
+    token_type_t token_type;
 
     /** Current position in the source */
     pos_t pos;
@@ -99,14 +101,14 @@ void Lex_Free(lexer_t * lexer);
 
 /**
  * Try to extract the next token in the buffer
- * @param[in]  lexer The lexer used to extract the token
- * @param[out] token A pointer where will be passed the adderess
- *                   of the newly extracted token
- * @retval 0 if no error occured
- * @retval Non-zero if an error occured.
+ * @param[in]  lexer       The lexer used to extract the token
+ * @param      preserve_ws When set to true tokens categorized
+ *                         as whitespaces will not be ignored
+ * @retval A pointer to the newly extracted token
+ * @retval NULL if an error occured
  *         Call Lex_GetStatus() for more info
  */
-int Lex_NextToken(lexer_t * lexer, token_t ** token);
+token_t * Lex_NextToken(lexer_t * lexer, bool preserve_ws);
 
 /**
  * Gets the current status of the lexer

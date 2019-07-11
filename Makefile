@@ -28,7 +28,7 @@ LDFLAGS  :=
 
 ###############################################################################
 
-.PHONY: all clean paths tests doc $(TARGET)
+.PHONY: all clean paths tests doc $(TARGET) regen-tokens
 
 all: $(TARGET) tests doc
 
@@ -45,6 +45,9 @@ tests:
 
 doc:
 	@doxygen
+
+regen-tokens:
+	@python3 ./Grammar/tokens_gen.py ./Grammar/tokens.txt ./Parser/include/tokens.h
 
 ###############################################################################
 
