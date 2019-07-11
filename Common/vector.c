@@ -51,8 +51,11 @@ static void Vec_Grow(vector_t * vector) {
  */
 vector_t * Vec_New() {
     vector_t * vector = (vector_t *)malloc(sizeof(vector_t));
-    vector->length = vector->max_length = 0;
-    vector->buffer = NULL;
+    /** @todo Call error API */
+    if (vector) {
+        vector->length = vector->max_length = 0;
+        vector->buffer = NULL;
+    }
     return vector;
 }
 
@@ -61,7 +64,10 @@ vector_t * Vec_New() {
  * @param[in] vector A pointer to the vector to free
  */
 void Vec_Free(vector_t * vector) {
-    if (vector) free(vector);
+    if (vector) {
+        if (vector->buffer) free(vector->buffer);
+        free(vector);
+    }
 }
 
 /**
@@ -107,6 +113,8 @@ void Vec_Append(vector_t * vector, void * elem) {
  * Pops an element from the vector
  * @param[in] vector A pointer to the vector
  * @returns          The poped element
+ * 
+ * @todo Think about reallocating while poping
  */
 void * Vec_Pop(vector_t * vector) {
     void * elem = NULL;
