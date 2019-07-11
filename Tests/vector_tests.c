@@ -15,8 +15,88 @@ void Test_VectorCreation(void) {
 
     vector = Vec_New();
     assert_true(vector != NULL);
-    assert_int_equal(0, vector->length);
-    assert_int_equal(0, vector->max_length);
+    assert_int_equal(0, Vec_GetLength(vector));
+    assert_int_equal(0, Vec_GetMaxLength(vector));
+    Vec_Free(vector);
+}
+
+/**
+ * Tests basic appending to the vector
+ */
+void Test_VectorBasicAppending(void) {
+    vector_t * vector;
+    int a = 1337, b = 1234;
+    size_t max_length;
+
+    vector = Vec_New();
+    Vec_Append(vector, &a);
+    assert_int_equal(1, Vec_GetLength(vector));
+    max_length = Vec_GetMaxLength(vector);
+    assert_true(max_length > 0);
+    assert_int_equal(1337, *(int *)Vec_GetAt(vector, 0));
+
+    Vec_Append(vector, &b);
+    assert_int_equal(2, Vec_GetLength(vector));
+    // no further allocation
+    assert_true(Vec_GetMaxLength(vector) == max_length);
+    assert_int_equal(1234, *(int *)Vec_GetAt(vector, 1));
+    Vec_Free(vector);
+}
+
+/**
+ * Tests appending that need reallocation
+ */
+void Tests_VectorAdvancedAppending(void) {
+    vector_t * vector;
+    int a = 1337;
+    size_t initial_max_length;
+
+    vector = Vec_New();
+    // append one element allocating memory and initializing max_length
+    Vec_Append(vector, &a);
+    initial_max_length = Vec_GetMaxLength(vector);
+    // append initial_max_length elements so that it triggers a reallocation
+    // (length is currently 1)
+    for (size_t i = 0; i < initial_max_length; i++) {
+        Vec_Append(vector, &a);
+    }
+    // vector max_length must have doubled now
+    assert_int_equal(initial_max_length * 2, Vec_GetMaxLength(vector));
+    assert_int_equal(initial_max_length + 1, Vec_GetLength(vector));
+    Vec_Free(vector);
+}
+
+/**
+ * Tests vector access and bound checking
+ */
+void Test_VectorAccess(void) {
+    vector_t * vector;
+    int * elem, a = 1337, b = 1234;
+
+    vector = Vec_New();
+    elem = Vec_GetAt(vector, 10);
+    assert_true(elem == NULL);
+    elem = Vec_GetAt(vector, 0);
+    assert_true(elem == NULL);
+
+    Vec_Append(vector, &a);
+    Vec_Append(vector, &b);
+    assert_int_equal(2, Vec_GetLength(vector));
+    assert_int_equal(1337, *(int *)Vec_GetAt(vector, 0));
+    assert_int_equal(1234, *(int *)Vec_GetAt(vector, 1));
+
+    elem = (int *)Vec_Pop(vector);
+    assert_true(elem == &b);
+    assert_int_equal(1, Vec_GetLength(vector));
+    Vec_SetAt(vector, 0, &b);
+    assert_int_equal(1234, *(int *)Vec_GetAt(vector, 0));
+
+    Vec_Pop(vector);
+    assert_int_equal(0, Vec_GetLength(vector));
+    // we don't get a negative length
+    Vec_Pop(vector);
+    assert_int_equal(0, Vec_GetLength(vector));
+    Vec_Free(vector);
 }
 
 /**
@@ -25,5 +105,8 @@ void Test_VectorCreation(void) {
 void Test_VectorTests(void) {
     test_fixture_start();
     run_test(Test_VectorCreation);
+    run_test(Test_VectorBasicAppending);
+    run_test(Tests_VectorAdvancedAppending);
+    run_test(Test_VectorAccess);
     test_fixture_end();
 }
