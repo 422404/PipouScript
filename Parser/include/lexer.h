@@ -7,46 +7,7 @@
 #include <stdbool.h>
 #include "misc.h"
 #include "tokens.h"
-
-/**
- * Represents a position in the source code
- */
-typedef struct {
-    /**
-     * The column of the position
-     * Starts at 1
-     */
-    size_t col;
-
-    /** 
-     * The line of the position
-     * Starts at 1
-     */
-    size_t line;
-} pos_t;
-
-/**
- * Represents an arbitrary region that span over
- * two positions
- */
-typedef struct {
-    /** Start position */
-    pos_t start;
-
-    /** End position */
-    pos_t end;
-} span_t;
-
-/**
- * Represents a grammar base token
- */
-typedef struct {
-    /** Token type */
-    token_type_t type;
-
-    /** Token span */
-    span_t span;
-} token_t;
+#include "token.h"
 
 /**
  * Represents the current status of the lexer
