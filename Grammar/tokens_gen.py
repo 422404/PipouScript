@@ -8,14 +8,18 @@ def gen_tokens(tokens_file, token_h_file):
         tokens = []
         
         for line in tf.readlines():
-            match = re.match(r"(?P<name>[a-zA-Z]+)( +(?P<value>'(.|\\.)'))?", line)
+            match = re.match(r"(?P<name>[a-zA-Z]+)( +(?P<value>'((\\.)|.)'))?", line)
             if match:
                 token_name = match.group("name")
                 token_value = match.group("value")
                 tokens.append((token_name, token_value))
         
         hf.truncate(0)
-        hf.write("#pragma once\n\n")
+        hf.write("/**\n"
+                 " * @file tokens.h\n"
+                 " * (Auto-generated) Tokens list\n"
+                 " */\n"
+                 "#pragma once\n\n")
         if len(tokens):
             for (token_name, token_value) in tokens:
                 if token_value:

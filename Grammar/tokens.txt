@@ -1,18 +1,39 @@
 # Whitespaces
 SPACE                 ' '
 TAB                   '\t'
-NEWLINE
+NEWLINE                    # '\n', '\r\n', '\r'
 
 # Tokens
-EQ                    '='
+DQUOTE                '"'
+QUOTE                 '\''
+LBRACKET              '{'
+RBRACKET              '}'
+LSBRACKET             '['
+RSBRACKET             ']'
+LPAREN                '('
+RPAREN                ')'
+COLON                 ':'
+SEMICOLON             ';'
+PIPE                  '|'
+CIRCUMFLEX            '^'
+EQUAL                 '='
+DOT                   '.'
+UNDERSCORE            '_'
+COMMA                 ','
+AMP                   '&'
+HASH                  '#'
+LOWER                 '<'
+GREATER               '>'
 PLUS                  '+'
 MINUS                 '-'
-TIMES                 '*'
-DIV                   '/'
-MOD                   '%'
+STAR                  '*'
+SLASH                 '/'
+PERCENT               '%'
+EQEQUAL                   # '=='
 
 # Special tokens
 IDENT
 STRING
 INT
 DOUBLE
+COMMENT
