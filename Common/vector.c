@@ -11,6 +11,7 @@
 
 /**
  * Tests if an index is in the bounds of a vector
+ * @private
  * @param[in] vector A pointer to the vector
  * @param     index  The index to test
  * @retval           true if in the bounds
@@ -23,6 +24,7 @@ static bool Vec_InBounds(vector_t * vector, size_t index) {
 /**
  * Checks if a vector can be appended an element or if it's at
  * its maximum capacity
+ * @private
  * @param[in] vector A pointer to the vector
  * @retval true if the vector must grow to store another element
  * @retval false if the vector is not full
@@ -33,6 +35,7 @@ static bool Vec_MustGrow(vector_t * vector) {
 
 /**
  * Grows the vector by LENGTH_INCREMENT elements
+ * @private
  * @param[in] vector A pointer to the vector
  */
 static void Vec_Grow(vector_t * vector) {
