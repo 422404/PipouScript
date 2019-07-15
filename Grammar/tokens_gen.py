@@ -2,8 +2,9 @@
 import sys
 import re
 
-def gen_tokens(tokens_file, token_h_file):
-    with open(token_h_file, "w") as hf, \
+def gen_tokens(tokens_file, tokens_h_file, tokens_c_file):
+    with open(tokens_h_file, "w") as hf, \
+         open(tokens_c_file, "w") as cf, \
          open(tokens_file, "r") as tf:
         tokens = []
         
@@ -17,7 +18,7 @@ def gen_tokens(tokens_file, token_h_file):
         hf.truncate(0)
         hf.write("/**\n"
                  " * @file tokens.h\n"
-                 " * (Auto-generated) Tokens list\n"
+                 " * (Auto-generated) Tokens declaration\n"
                  " */\n"
                  "#pragma once\n\n")
         if len(tokens):
@@ -32,10 +33,16 @@ def gen_tokens(tokens_file, token_h_file):
             hf.write("    TOKENS_NUMBER,\n"
                      "    TOKTYPE_NOTTOKEN\n"
                      "} token_type_t;\n\n"
+                     "extern char * token_type_names[];\n")
+            
+            cf.write("/**\n"
+                     " * @file tokens.c\n"
+                     " * (Auto-generated) Tokens declaration\n"
+                     " */\n\n"
                      "char * token_type_names[] = {\n")
             for (token_name, _) in tokens:
-                hf.write("    \"TOKTYPE_" + token_name + "\",\n")
-            hf.write("};\n")
+                cf.write("    \"TOKTYPE_" + token_name + "\",\n")
+            cf.write("};\n")
 
 if __name__ == "__main__":
-    gen_tokens(sys.argv[1], sys.argv[2])
+    gen_tokens(sys.argv[1], sys.argv[2], sys.argv[3])

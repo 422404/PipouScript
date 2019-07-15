@@ -50,7 +50,7 @@ doc:
 	@doxygen
 
 regen-tokens:
-	@python3 ./Grammar/tokens_gen.py ./Grammar/tokens.txt ./Parser/include/tokens.h
+	@python3 ./Grammar/tokens_gen.py ./Grammar/tokens.txt ./Parser/include/tokens.h ./Parser/tokens.c
 
 ###############################################################################
 

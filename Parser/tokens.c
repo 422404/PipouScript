@@ -1,0 +1,42 @@
+/**
+ * @file tokens.c
+ * (Auto-generated) Tokens declaration
+ */
+
+char * token_type_names[] = {
+    "TOKTYPE_SPACE",
+    "TOKTYPE_TAB",
+    "TOKTYPE_NEWLINE",
+    "TOKTYPE_DQUOTE",
+    "TOKTYPE_QUOTE",
+    "TOKTYPE_LCBRACKET",
+    "TOKTYPE_RCBRACKET",
+    "TOKTYPE_LSBRACKET",
+    "TOKTYPE_RSBRACKET",
+    "TOKTYPE_LPAREN",
+    "TOKTYPE_RPAREN",
+    "TOKTYPE_COLON",
+    "TOKTYPE_SEMICOLON",
+    "TOKTYPE_PIPE",
+    "TOKTYPE_CIRCUMFLEX",
+    "TOKTYPE_EQUAL",
+    "TOKTYPE_DOT",
+    "TOKTYPE_UNDERSCORE",
+    "TOKTYPE_DOLLAR",
+    "TOKTYPE_COMMA",
+    "TOKTYPE_AMP",
+    "TOKTYPE_HASH",
+    "TOKTYPE_LOWER",
+    "TOKTYPE_GREATER",
+    "TOKTYPE_PLUS",
+    "TOKTYPE_MINUS",
+    "TOKTYPE_STAR",
+    "TOKTYPE_SLASH",
+    "TOKTYPE_PERCENT",
+    "TOKTYPE_EQEQUAL",
+    "TOKTYPE_IDENT",
+    "TOKTYPE_STRING",
+    "TOKTYPE_INT",
+    "TOKTYPE_DOUBLE",
+    "TOKTYPE_COMMENT",
+};
