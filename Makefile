@@ -28,9 +28,9 @@ LDFLAGS  :=
 
 ###############################################################################
 
-.PHONY: all clean paths tests doc $(TARGET) regen-tokens
+.PHONY: all $(TARGET) clean paths tests run-tests doc regen-tokens
 
-all: $(TARGET) tests doc
+all: $(TARGET)
 
 clean:
 	@rm -Rf $(BUILD)
@@ -42,6 +42,9 @@ paths:
 
 tests:
 	@make -f Tests.mk
+
+run-tests:
+	@valgrind --leak-check=yes ./Build/pipou-tests
 
 doc:
 	@doxygen
