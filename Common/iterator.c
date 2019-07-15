@@ -3,6 +3,7 @@
  * Simple iterator implementation
  */
 #include <stdlib.h>
+#include "error.h"
 #include "misc.h"
 #include "iterator.h"
 
@@ -17,11 +18,12 @@ iterator_t * Iter_New(void * source, iterator_has_next_func_t HasNext_impl,
     iterator_t * iterator;
 
     iterator = (iterator_t *)malloc(sizeof(iterator_t));
-    /** @todo Call error API */
     if (iterator) {
         iterator->source  = source;
         iterator->HasNext = HasNext_impl;
         iterator->Next    = Next_impl;
+    } else {
+        Err_Throw(Err_New("Cannot allocate iterator"));
     }
     return iterator;
 }
@@ -31,8 +33,8 @@ iterator_t * Iter_New(void * source, iterator_has_next_func_t HasNext_impl,
  * @param[in] iterator A pointer to the iterator
  */
 void Iter_Free(iterator_t * iterator) {
-    /** @todo Call error API */
     if (iterator) free(iterator);
+    else Err_Throw(Err_New("NULL pointer to iterator"));
 }
 
 /**
@@ -44,9 +46,10 @@ void Iter_Free(iterator_t * iterator) {
 bool Iter_HasNext(iterator_t * iterator) {
     bool res = false;
 
-    /** @todo Call error API */
     if (iterator) {
         res = iterator->HasNext(iterator);
+    } else {
+        Err_Throw(Err_New("NULL pointer to iterator"));
     }
     return res;
 }
@@ -59,9 +62,10 @@ bool Iter_HasNext(iterator_t * iterator) {
 void * Iter_Next(iterator_t * iterator) {
     void * res = NULL;
 
-    /** @todo Call error API */
     if (iterator) {
         res = iterator->Next(iterator);
+    } else {
+        Err_Throw(Err_New("NULL pointer to iterator"));
     }
     return res;
 }

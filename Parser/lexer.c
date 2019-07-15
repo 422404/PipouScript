@@ -40,21 +40,20 @@ static bool Lex_PrevCharIs(lexer_t * lexer, char c) {
 lexer_t * Lex_New(char * buffer, size_t length) {
     lexer_t * lexer = NULL;
 
+    if (buffer == NULL) Err_Throw(Err_New("NULL pointer to lexer chars buffer"));
+
     lexer = (lexer_t *)malloc(sizeof(lexer_t));
-    /**
-     * @todo Call error API
-     * on lexer == NULL
-     * on buffer == NULL
-     */
     if (lexer) {
         pos_t pos = {1, 1};
         lexer->buffer = buffer;
         lexer->buffer_length = length;
         lexer->current_char = buffer;
-        lexer->token_start = buffer;
         lexer->token_type = TOKTYPE_NOTTOKEN;
         lexer->pos = pos;
         lexer->status = length != 0 ? LEX_OK : LEX_EOF;
+        lexer->error = NULL;
+    } else {
+        Err_Throw(Err_New("Cannot allocate lexer"));
     }
     return lexer;
 }
@@ -66,8 +65,11 @@ lexer_t * Lex_New(char * buffer, size_t length) {
  * @param[in] lexer A pointer to the lexer to be freed
  */
 void Lex_Free(lexer_t * lexer) {
-    /** @todo Call error API */
-    if (lexer) free(lexer);
+    if (lexer) {
+        if (lexer->error) free(lexer->error);
+        free(lexer);
+    }
+    else Err_Throw(Err_New("NULL pointer to lexer"));
 }
 
 /**
@@ -243,8 +245,8 @@ static bool Lex_TryParseString(lexer_t * lexer) {
             while (lexer->current_char != char_ptr) Lex_IncrementCurrentChar(lexer);
             fullmatch = true;
         } else {
-            /** @todo Call error API */
             lexer->status = LEX_ERROR;
+            lexer->error = Err_New("String not terminated");
         }
     }
     return fullmatch;
@@ -408,9 +410,11 @@ token_t * Lex_NextToken(lexer_t * lexer, bool preserve_ws) {
  */
 lexer_status_t Lex_GetStatus(lexer_t * lexer) {
     lexer_status_t status = LEX_ERROR;
-    /** @todo Call error API */
+    
     if (lexer) {
         status = lexer->status;
+    } else {
+        Err_Throw(Err_New("NULL pointer to lexer"));
     }
     return status;
 }

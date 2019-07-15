@@ -5,6 +5,7 @@
 #pragma once
 #include <sys/types.h>
 #include <stdbool.h>
+#include "error.h"
 #include "tokens.h"
 #include "token.h"
 
@@ -19,8 +20,6 @@ typedef enum {
 
 /**
  * Represents the lexer used to extract tokens from an input buffer
- * @todo Add en error field with a reason and line/col numbers
- * @todo Create an error type
  */
 typedef struct {
     /** Input buffer address */
@@ -31,12 +30,8 @@ typedef struct {
 
     /**
      * Address of the next char to be processed
-     * @todo Remove
      */
     char * current_char;
-
-    /** Current token address in buffer */
-    char * token_start;
 
     /** Hypothetical type of the token to be matched */
     token_type_t token_type;
@@ -46,6 +41,9 @@ typedef struct {
     
     /** Current state of the lexer */
     lexer_status_t status;
+
+    /** Description of the LEX_ERROR status */
+    error_t * error;
 } lexer_t;
 
 /**

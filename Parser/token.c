@@ -4,6 +4,7 @@
  */
 #include <stddef.h>
 #include <stdlib.h>
+#include "error.h"
 #include "token.h"
 #include "tokens.h"
 
@@ -28,10 +29,11 @@ token_t * Token_New(token_type_t type, span_t span) {
     token_t * token = NULL;
 
     token = (token_t *)malloc(sizeof(token_t));
-    /** @todo Call error API */
     if (token) {
         token->type = type;
         token->span = span;
+    } else {
+        Err_Throw(Err_New("Cannot allocated token"));
     }
     return token;
 }
@@ -41,6 +43,6 @@ token_t * Token_New(token_type_t type, span_t span) {
  * @param[in] token Token to free
  */
 void Token_Free(token_t * token) {
-    /** @todo Call error API */
     if (token) free(token);
+    else Err_Throw(Err_New("NULL pointer to token"));
 }

@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include "error.h"
 #include "vector.h"
 
 #define LENGTH_INCREMENT 50
@@ -54,10 +55,12 @@ static void Vec_Grow(vector_t * vector) {
  */
 vector_t * Vec_New() {
     vector_t * vector = (vector_t *)malloc(sizeof(vector_t));
-    /** @todo Call error API */
+
     if (vector) {
         vector->length = vector->max_length = 0;
         vector->buffer = NULL;
+    } else {
+        Err_Throw(Err_New("Cannot allocate vector"));
     }
     return vector;
 }
