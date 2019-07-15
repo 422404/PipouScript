@@ -26,6 +26,7 @@ void Err_Throw(error_t * error);
 /**
  * Allocates a new error
  * @param[in] massage The message to associate to the error
+ *                    (a copy will be performed)
  * @returns           The newly allocated error
  */
 error_t * Err_New(char * message);

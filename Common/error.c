@@ -4,6 +4,7 @@
  */
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include "error.h"
 
 /**
@@ -27,13 +28,19 @@ void Err_Throw(error_t * error) {
 /**
  * Allocates a new error
  * @param[in] massage The message to associate to the error
+ *                    (a copy will be performed)
  * @returns           The newly allocated error
  */
 error_t * Err_New(char * message) {
-    error_t * error = NULL;
+    error_t * error;
+    char * msg_copy;
+    size_t msg_buf_length;
 
     error = (error_t *)malloc(sizeof(error_t));
-    error->message = message;
+    msg_buf_length = strlen(message) + 1;
+    msg_copy = (char *)malloc(msg_buf_length);
+    memcpy(msg_copy, message, msg_buf_length);
+    error->message = msg_copy;
     return error;
 }
 
@@ -42,5 +49,6 @@ error_t * Err_New(char * message) {
  * @param[in] error The error to free
  */
 void Err_Free(error_t * error) {
+    free(error->message);
     free(error);
 }
