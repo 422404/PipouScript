@@ -5,7 +5,6 @@
 #pragma once
 #include <sys/types.h>
 #include <stdbool.h>
-#include "misc.h"
 #include "tokens.h"
 #include "token.h"
 
@@ -20,15 +19,20 @@ typedef enum {
 
 /**
  * Represents the lexer used to extract tokens from an input buffer
+ * @todo Add en error field with a reason and line/col numbers
+ * @todo Create an error type
  */
 typedef struct {
     /** Input buffer address */
     char * buffer;
 
     /** Input buffer length */
-    size_t* buffer_length;
+    size_t buffer_length;
 
-    /** Address of the next char to be processed */
+    /**
+     * Address of the next char to be processed
+     * @todo Remove
+     */
     char * current_char;
 
     /** Current token address in buffer */
@@ -50,7 +54,7 @@ typedef struct {
  * @param     length Length of the input buffer
  * @returns          A pointer to the newly allocated lexer
  */
-lexer_t *  Lex_New(char * buffer, size_t length);
+lexer_t * Lex_New(char * buffer, size_t length);
 
 /**
  * Frees an allocated lexer.
