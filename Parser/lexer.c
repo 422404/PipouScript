@@ -4,6 +4,7 @@
  */
 #include <stdlib.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include "misc.h"
 #include "token.h"
 #include "lexer.h"
@@ -66,7 +67,7 @@ lexer_t * Lex_New(char * buffer, size_t length) {
  */
 void Lex_Free(lexer_t * lexer) {
     if (lexer) {
-        if (lexer->error) free(lexer->error);
+        if (lexer->error) Err_Free(lexer->error);
         free(lexer);
     }
     else Err_Throw(Err_New("NULL pointer to lexer"));
@@ -219,6 +220,12 @@ static token_t * Lex_ParseSimpleToken(lexer_t * lexer) {
             token_span.start = token_start;
             token_span.end   = token_end;
             token = Token_New(token_type, token_span);
+        } else {
+            lexer->status = LEX_ERROR;
+            char * buf = malloc(100);
+            snprintf(buf, 100, "Unrecognized token '%c' (%ld:%ld)", c, lexer->pos.line, lexer->pos.col);
+            lexer->error = Err_New(buf);
+            free(buf);
         }
     }
     return token;
@@ -343,9 +350,11 @@ static token_t * Lex_ParseCompoundToken(lexer_t * lexer) {
                     && *(lexer->current_char + 2) >= '0' && *(lexer->current_char + 2) <= '9') {
                 token_type = TOKTYPE_DOUBLE;
                 Lex_IncrementCurrentChar(lexer);
+                Lex_IncrementCurrentChar(lexer);
                 Lex_TryParseInteger(lexer);
                 if (Lex_NextCharIs(lexer, 'e') && Lex_InBufferBounds(lexer, lexer->current_char + 2)
                         && *(lexer->current_char + 2) >= '0' && *(lexer->current_char + 2) <= '9') {
+                    Lex_IncrementCurrentChar(lexer);
                     Lex_IncrementCurrentChar(lexer);
                     Lex_TryParseInteger(lexer);
                 }
