@@ -9,6 +9,7 @@
 
 /**
  * Represents a position in the source code
+ * @todo Put in separate file
  */
 typedef struct {
     /**
@@ -53,3 +54,17 @@ typedef struct {
  * @retval false if it's not
  */
 bool Token_IsWhitespace(token_t * token);
+
+/**
+ * Allocates a new token
+ * @param type Token type
+ * @param span Span of the token
+ * @returns    A pointer to the newly allocated token
+ */
+token_t * Token_New(token_type_t type, span_t span);
+
+/**
+ * Frees a token
+ * @param[in] token Token to free
+ */
+void Token_Free(token_t * token);
