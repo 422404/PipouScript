@@ -24,7 +24,8 @@ def gen_tokens(tokens_file, token_h_file):
             for (token_name, token_value) in tokens:
                 if token_value:
                     hf.write("#define TOK_" + token_name + (" " + token_value if token_value else "") + "\n")
-            hf.write("\ntypedef enum {\n")
+            hf.write("\ntypedef enum {\n"
+                     "    TOKTYPE_NOTTOKEN = -1,\n")
             for (token_name, _) in tokens:
                 hf.write("    TOKTYPE_" + token_name + ",\n")
             hf.write("    TOKENS_NUMBER\n} token_type_t;\n")
