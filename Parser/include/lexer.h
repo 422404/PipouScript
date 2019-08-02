@@ -31,9 +31,6 @@ typedef struct {
     /** Address of the next char to be processed */
     char * current_char;
 
-    /** Hypothetical type of the token to be matched */
-    token_type_t token_type;
-
     /** Current position in the source */
     loc_t pos;
 

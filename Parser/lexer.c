@@ -50,7 +50,6 @@ lexer_t * Lex_New(char * buffer, size_t length, char * filename) {
         lexer->buffer = buffer;
         lexer->buffer_length = length;
         lexer->current_char = buffer;
-        lexer->token_type = TOKTYPE_NOTTOKEN;
         lexer->pos = pos;
         lexer->filename = filename;
         lexer->status = length != 0 ? LEX_OK : LEX_EOF;
