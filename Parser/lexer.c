@@ -34,23 +34,25 @@ static bool Lex_PrevCharIs(lexer_t * lexer, char c) {
 
 /**
  * Allocates a new lexer
- * @param[in] buffer The buffer where tokens will be extracted
- * @param     length Length of the input buffer
+ * @param[in] buffer   The buffer where tokens will be extracted
+ * @param     length   Length of the input buffer
+ * @param[in] filename Name of the file that contains the code (NULL if in REPL mode)
  * @returns          A pointer to the newly allocated lexer
  */
-lexer_t * Lex_New(char * buffer, size_t length) {
+lexer_t * Lex_New(char * buffer, size_t length, char * filename) {
     lexer_t * lexer = NULL;
 
     if (buffer == NULL) Err_Throw(Err_New("NULL pointer to lexer chars buffer"));
 
     lexer = (lexer_t *)malloc(sizeof(lexer_t));
     if (lexer) {
-        pos_t pos = {1, 1};
+        loc_t pos = {1, 1, filename};
         lexer->buffer = buffer;
         lexer->buffer_length = length;
         lexer->current_char = buffer;
         lexer->token_type = TOKTYPE_NOTTOKEN;
         lexer->pos = pos;
+        lexer->filename = filename;
         lexer->status = length != 0 ? LEX_OK : LEX_EOF;
         lexer->error = NULL;
     } else {
@@ -99,6 +101,41 @@ static void Lex_IncrementCurrentChar(lexer_t * lexer) {
 }
 
 /**
+ * Try to parse an operator that span multiple chars
+ * @todo tests
+ * @retval True if an operator has been parse
+ * @retval False if not
+ */
+static bool Lex_ParseMulticharOperator(lexer_t * lexer, token_type_t * token_type, loc_t * token_end) {
+    struct token_transform {
+        token_type_t current_token_type;
+        char         next_char;
+        token_type_t transform_to;
+    } transforms[] = {
+        {TOKTYPE_EQUAL,   TOK_EQUAL, TOKTYPE_EQEQUAL },
+        {TOKTYPE_EXCL,    TOK_EQUAL, TOKTYPE_NOTEQUAL},
+        {TOKTYPE_GREATER, TOK_EQUAL, TOKTYPE_GEQUAL  },
+        {TOKTYPE_LOWER,   TOK_EQUAL, TOKTYPE_LEQUAL  },
+        {TOKTYPE_COLON,   TOK_EQUAL, TOKTYPE_COLEQUAL},
+        {TOKTYPE_PIPE,    TOK_PIPE,  TOKTYPE_PIPEPIPE},
+        {TOKTYPE_AMP,     TOK_AMP,   TOKTYPE_AMPAMP  }
+    };
+    bool success = false;
+
+    for (size_t i = 0; i < 7 && !success; i++) {
+        if (*token_type == transforms[i].current_token_type
+                && Lex_NextCharIs(lexer, transforms[i].next_char)) {
+            *token_type = transforms[i].transform_to;
+            Lex_IncrementCurrentChar(lexer);
+            token_end->col++;
+            success =  true;
+        }
+    }
+
+    return success;
+}
+
+/**
  * Try to parse a simple token
  * @private
  * @param[in] lexer The lexer used to extract the token
@@ -108,7 +145,7 @@ static void Lex_IncrementCurrentChar(lexer_t * lexer) {
 static token_t * Lex_ParseSimpleToken(lexer_t * lexer) {
     token_t * token = NULL;
     token_type_t token_type = TOKTYPE_NOTTOKEN;
-    pos_t token_start, token_end;
+    loc_t token_start, token_end;
     span_t token_span;
     token_start = token_end = lexer->pos;
 
@@ -199,21 +236,19 @@ static token_t * Lex_ParseSimpleToken(lexer_t * lexer) {
             case TOK_PERCENT:
                 token_type = TOKTYPE_PERCENT;
                 break;
+            case TOK_EXCL:
+                token_type = TOKTYPE_EXCL;
+                break;
         }
 
-        if (token_type == TOKTYPE_EQUAL
-                && Lex_NextCharIs(lexer, TOK_EQUAL)) {
-            token_type = TOKTYPE_EQEQUAL;
-            Lex_IncrementCurrentChar(lexer);
-            token_end.col++;
-
-        } else if (c == '\n' || c == '\r') {
+        if (c == '\n' || c == '\r') {
             token_type = TOKTYPE_NEWLINE;
             if (c == '\r' && Lex_NextCharIs(lexer, '\n')) {
                 Lex_IncrementCurrentChar(lexer);
                 token_end.col++;
             }
         }
+        Lex_ParseMulticharOperator(lexer, &token_type, &token_end);
 
         if (token_type != TOKTYPE_NOTTOKEN) { // if matched
             Lex_IncrementCurrentChar(lexer);

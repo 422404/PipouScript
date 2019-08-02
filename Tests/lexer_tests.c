@@ -14,40 +14,40 @@ static char * test_buf7 = "10 1337 1234.0 456.7e89";
 
 // test_buf1
 token_t expected_tokens1[] = {
-    {TOKTYPE_LCBRACKET,  {{1, 1}, {1, 1}}},
-    {TOKTYPE_RSBRACKET,  {{2, 1}, {2, 1}}},
-    {TOKTYPE_NEWLINE,    {{3, 1}, {3, 1}}},
-    {TOKTYPE_RPAREN,     {{1, 2}, {1, 2}}},
-    {TOKTYPE_PERCENT,    {{2, 2}, {2, 2}}},
-    {TOKTYPE_SPACE,      {{3, 2}, {3, 2}}}
+    {TOKTYPE_LCBRACKET,  {{1, 1, NULL}, {1, 1, NULL}}},
+    {TOKTYPE_RSBRACKET,  {{1, 2, NULL}, {1, 2, NULL}}},
+    {TOKTYPE_NEWLINE,    {{1, 3, NULL}, {1, 3, NULL}}},
+    {TOKTYPE_RPAREN,     {{2, 1, NULL}, {2, 1, NULL}}},
+    {TOKTYPE_PERCENT,    {{2, 2, NULL}, {2, 2, NULL}}},
+    {TOKTYPE_SPACE,      {{2, 3, NULL}, {2, 3, NULL}}}
 };
 
 // test_buf2
 token_t expected_tokens2[] = {
-    {TOKTYPE_LSBRACKET,  {{5, 1}, {5, 1}}},
-    {TOKTYPE_PERCENT,    {{1, 2}, {1, 2}}}
+    {TOKTYPE_LSBRACKET,  {{1, 5, NULL}, {1, 5, NULL}}},
+    {TOKTYPE_PERCENT,    {{2, 1, NULL}, {2, 1, NULL}}}
 };
 
 // test_buf4
 token_t expected_tokens3[] = {
-    {TOKTYPE_PERCENT,    {{ 1, 1}, { 1, 1}}},
-    {TOKTYPE_STRING,     {{ 3, 1}, {19, 1}}},
-    {TOKTYPE_STAR,       {{21, 1}, {21, 1}}}
+    {TOKTYPE_PERCENT,    {{1,  1, NULL}, {1,  1, NULL}}},
+    {TOKTYPE_STRING,     {{1,  3, NULL}, {1, 19, NULL}}},
+    {TOKTYPE_STAR,       {{1, 21, NULL}, {1, 21, NULL}}}
 };
 
 // test_buf6
 token_t expected_tokens4[] = {
-    {TOKTYPE_IDENT,      {{ 1, 1}, { 4, 1}}},
-    {TOKTYPE_STRING,     {{ 6, 1}, {11, 1}}},
-    {TOKTYPE_COMMENT,    {{13, 1}, {37, 1}}}
+    {TOKTYPE_IDENT,      {{1,  1, NULL}, {1,  4, NULL}}},
+    {TOKTYPE_STRING,     {{1,  6, NULL}, {1, 11, NULL}}},
+    {TOKTYPE_COMMENT,    {{1, 13, NULL}, {1, 37, NULL}}}
 };
 
 // test_buf7
 token_t expected_tokens5[] = {
-    {TOKTYPE_INT,      {{ 1, 1}, { 2, 1}}},
-    {TOKTYPE_INT,      {{ 4, 1}, { 7, 1}}},
-    {TOKTYPE_INT,      {{ 9, 1}, {14, 1}}},
-    {TOKTYPE_INT,      {{15, 1}, {23, 1}}}
+    {TOKTYPE_INT,      {{1,  1, NULL}, {1,  2, NULL}}},
+    {TOKTYPE_INT,      {{1,  4, NULL}, {1,  7, NULL}}},
+    {TOKTYPE_INT,      {{1,  9, NULL}, {1, 14, NULL}}},
+    {TOKTYPE_INT,      {{1, 15, NULL}, {1, 23, NULL}}}
 };
 
 static inline void MatchTokens(lexer_t * lexer, token_t expected_tokens[], size_t expected_tokens_length, bool preserve_ws) {
@@ -75,7 +75,7 @@ static inline void MatchTokens(lexer_t * lexer, token_t expected_tokens[], size_
 void Test_LexerCreation(void) {
     lexer_t * lexer;
 
-    lexer = Lex_New(test_buf1, strlen(test_buf1));
+    lexer = Lex_New(test_buf1, strlen(test_buf1), NULL);
     assert_true(lexer != NULL);
     Lex_Free(lexer);
 }
@@ -83,7 +83,7 @@ void Test_LexerCreation(void) {
 void Test_LexerBasicTokenRecognition(void) {
     lexer_t * lexer;
 
-    lexer = Lex_New(test_buf1, strlen(test_buf1));
+    lexer = Lex_New(test_buf1, strlen(test_buf1), NULL);
     assert_true(lexer != NULL);
     MatchTokens(lexer, expected_tokens1, 6, true);
     Lex_Free(lexer);
@@ -92,7 +92,7 @@ void Test_LexerBasicTokenRecognition(void) {
 void Test_LexerBasicSkipWhitespaces(void) {
     lexer_t * lexer;
 
-    lexer = Lex_New(test_buf2, strlen(test_buf2));
+    lexer = Lex_New(test_buf2, strlen(test_buf2), NULL);
     assert_true(lexer != NULL);
     MatchTokens(lexer, expected_tokens2, 2, false);
     Lex_Free(lexer);
@@ -102,13 +102,14 @@ void Test_LexerEOF(void) {
     lexer_t * lexer;
     token_t * token;
 
-    lexer = Lex_New(test_buf3, strlen(test_buf3));
+    lexer = Lex_New(test_buf3, strlen(test_buf3), NULL);
     assert_true(lexer != NULL);
     token = Lex_NextToken(lexer, false);
     assert_true(token != NULL);
     assert_int_equal(TOKTYPE_STAR, token->type);
     // there's only one token so we have reached buffer end
     assert_int_equal(LEX_EOF, Lex_GetStatus(lexer));
+    assert_true(token->span.start.filename == NULL);
     Token_Free(token);
     token = Lex_NextToken(lexer, false);
     // no token can be extracted
@@ -121,17 +122,17 @@ void Test_LexerEOF(void) {
 void Test_LexerCompoundTokens(void) {
     lexer_t * lexer;
 
-    lexer = Lex_New(test_buf4, strlen(test_buf4));
+    lexer = Lex_New(test_buf4, strlen(test_buf4), NULL);
     assert_true(lexer != NULL);
     MatchTokens(lexer, expected_tokens3, 3, false);
     Lex_Free(lexer);
 
-    lexer = Lex_New(test_buf6, strlen(test_buf6));
+    lexer = Lex_New(test_buf6, strlen(test_buf6), NULL);
     assert_true(lexer != NULL);
     MatchTokens(lexer, expected_tokens4, 3, false);
     Lex_Free(lexer);
 
-    lexer = Lex_New(test_buf7, strlen(test_buf7));
+    lexer = Lex_New(test_buf7, strlen(test_buf7), NULL);
     assert_true(lexer != NULL);
     MatchTokens(lexer, expected_tokens5, 2, false);
     Lex_Free(lexer);
@@ -141,7 +142,7 @@ void Test_LexerUnterminatedStringError(void) {
     lexer_t * lexer;
     token_t * token;
 
-    lexer = Lex_New(test_buf5, strlen(test_buf5));
+    lexer = Lex_New(test_buf5, strlen(test_buf5), NULL);
     assert_true(lexer != NULL);
     token = Lex_NextToken(lexer, false);
     assert_true(token == NULL);

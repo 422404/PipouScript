@@ -6,8 +6,8 @@ NEWLINE                    # '\n', '\r\n', '\r'
 # Tokens
 DQUOTE                '"'
 QUOTE                 '\''
-LCBRACKET              '{'
-RCBRACKET              '}'
+LCBRACKET             '{'
+RCBRACKET             '}'
 LSBRACKET             '['
 RSBRACKET             ']'
 LPAREN                '('
@@ -30,7 +30,15 @@ MINUS                 '-'
 STAR                  '*'
 SLASH                 '/'
 PERCENT               '%'
+EXCL                  '!' # todo
+
 EQEQUAL                   # '=='
+NOTEQUAL                  # '!=' todo
+GEQUAL                    # '>=' todo
+LEQUAL                    # '<=' todo
+COLEQUAL                  # ':=' todo
+PIPEPIPE                  # '||' todo
+AMPAMP                    # '&&' todo
 
 # Special tokens
 IDENT

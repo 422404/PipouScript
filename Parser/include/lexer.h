@@ -28,16 +28,17 @@ typedef struct {
     /** Input buffer length */
     size_t buffer_length;
 
-    /**
-     * Address of the next char to be processed
-     */
+    /** Address of the next char to be processed */
     char * current_char;
 
     /** Hypothetical type of the token to be matched */
     token_type_t token_type;
 
     /** Current position in the source */
-    pos_t pos;
+    loc_t pos;
+
+    /** File that contains the code */
+    char * filename;
     
     /** Current state of the lexer */
     lexer_status_t status;
@@ -48,11 +49,12 @@ typedef struct {
 
 /**
  * Allocates a new lexer
- * @param[in] buffer The buffer where tokens will be extracted
- * @param     length Length of the input buffer
- * @returns          A pointer to the newly allocated lexer
+ * @param[in] buffer   The buffer where tokens will be extracted
+ * @param     length   Length of the input buffer
+ * @param[in] filename Name of the file that contains the code (NULL if in REPL mode)
+ * @returns            A pointer to the newly allocated lexer
  */
-lexer_t * Lex_New(char * buffer, size_t length);
+lexer_t * Lex_New(char * buffer, size_t length, char * filename);
 
 /**
  * Frees an allocated lexer.

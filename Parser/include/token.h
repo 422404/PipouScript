@@ -6,36 +6,7 @@
 #include <sys/types.h>
 #include <stdbool.h>
 #include "tokens.h"
-
-/**
- * Represents a position in the source code
- * @todo Put in separate file
- */
-typedef struct {
-    /**
-     * The column of the position
-     * Starts at 1
-     */
-    size_t col;
-
-    /** 
-     * The line of the position
-     * Starts at 1
-     */
-    size_t line;
-} pos_t;
-
-/**
- * Represents an arbitrary region that span over
- * two positions
- */
-typedef struct {
-    /** Start position */
-    pos_t start;
-
-    /** End position */
-    pos_t end;
-} span_t;
+#include "parser.h"
 
 /**
  * Represents a grammar base token

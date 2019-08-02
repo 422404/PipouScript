@@ -9,4 +9,4 @@
  * @retval 0 on termination without error
  * @retval Non-zero on failure
  */
-int EvalLoop();
+int Eval_REPL();
