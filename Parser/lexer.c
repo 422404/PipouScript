@@ -53,7 +53,6 @@ lexer_t * Lex_New(char * buffer, size_t length, char * filename) {
         lexer->pos = pos;
         lexer->filename = filename;
         lexer->status = length != 0 ? LEX_OK : LEX_EOF;
-        lexer->error = NULL;
     } else {
         Err_Throw(Err_New("Cannot allocate lexer"));
     }
@@ -67,10 +66,7 @@ lexer_t * Lex_New(char * buffer, size_t length, char * filename) {
  * @param[in] lexer A pointer to the lexer to be freed
  */
 void Lex_Free(lexer_t * lexer) {
-    if (lexer) {
-        if (lexer->error) Err_Free(lexer->error);
-        free(lexer);
-    }
+    if (lexer) free(lexer);
     else Err_Throw(Err_New("NULL pointer to lexer"));
 }
 
@@ -257,8 +253,9 @@ static token_t * Lex_ParseSimpleToken(lexer_t * lexer) {
         } else {
             lexer->status = LEX_ERROR;
             char * buf = malloc(100);
+            /// @todo Add filename indication
             snprintf(buf, 100, "Unrecognized token '%c' (%ld:%ld)", c, lexer->pos.line, lexer->pos.col);
-            lexer->error = Err_New(buf);
+            Err_SetError(Err_New(buf));
             free(buf);
         }
     }
@@ -287,7 +284,8 @@ static bool Lex_TryParseString(lexer_t * lexer) {
             fullmatch = true;
         } else {
             lexer->status = LEX_ERROR;
-            lexer->error = Err_New("String not terminated");
+            /// @todo Add line, col and filename indication
+            Err_SetError(Err_New("String not terminated"));
         }
     }
     return fullmatch;

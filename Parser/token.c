@@ -4,6 +4,7 @@
  */
 #include <stddef.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include "error.h"
 #include "token.h"
 #include "tokens.h"
@@ -45,4 +46,21 @@ token_t * Token_New(token_type_t type, span_t span) {
 void Token_Free(token_t * token) {
     if (token) free(token);
     else Err_Throw(Err_New("NULL pointer to token"));
+}
+
+/**
+ * Builds a string representation of the token
+ * @param[in] token Token to build the string from
+ * @returns         The string representaton of the token
+ */
+char * Token_ToString(token_t * token) {
+    const size_t string_buf_len = 100;
+    char * string_buf = (char *)malloc(string_buf_len);
+    if (string_buf) {
+        snprintf(string_buf, string_buf_len, "Token { %s, (%ld:%ld), (%ld:%ld) }",
+            token_type_names[token->type],
+            token->span.start.line, token->span.start.col,
+            token->span.end.line,   token->span.end.col);
+    }
+    return string_buf;
 }

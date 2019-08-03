@@ -8,6 +8,7 @@
 #include "error.h"
 #include "tokens.h"
 #include "token.h"
+#include "location.h"
 
 /**
  * Represents the current status of the lexer
@@ -37,11 +38,8 @@ typedef struct {
     /** File that contains the code */
     char * filename;
     
-    /** Current state of the lexer */
+    /** Current status of the lexer */
     lexer_status_t status;
-
-    /** Description of the LEX_ERROR status */
-    error_t * error;
 } lexer_t;
 
 /**

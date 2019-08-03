@@ -32,24 +32,25 @@ static ssize_t Eval_ReadLine(char ** line_ptr, size_t * len) {
 }
 
 /**
- * @todo doc
- * @todo take filename as param
+ * Prints the token stream from a buffer that contains code
+ * @param[in] buffer   The buffer to extract the tokens from
+ * @param[in] filename The name of the file that contains the code
  */
-void Eval_PrintTokens(char * buffer) {
+void Eval_PrintTokens(char * buffer, char * filename) {
     lexer_t * lexer;
     token_t * token;
 
-    lexer = Lex_New(buffer, strlen(buffer), NULL /** @todo take filename as param */);
+    lexer = Lex_New(buffer, strlen(buffer), filename);
     while (Lex_GetStatus(lexer) == LEX_OK) {
         token = Lex_NextToken(lexer, false);
         if (token) {
-            printf("Token { %s, (%ld:%ld), (%ld:%ld) }\n", token_type_names[token->type],
-                    token->span.start.line, token->span.start.col,
-                    token->span.end.line, token->span.end.col);
+            char * token_string = Token_ToString(token);
+            printf("%s\n", token_string);
+            free(token_string);
         }
         if (Lex_GetStatus(lexer) == LEX_ERROR) {
-            printf("Lexer error: ");
-            if (lexer->error) Err_Print(lexer->error);
+            Err_Print(Err_GetError());
+            Err_SetError(NULL);
         }
     }
     Lex_Free(lexer);
@@ -70,7 +71,7 @@ int Eval_REPL() {
         printf(":> ");
         line_length = Eval_ReadLine(&line, &tmp);
         if (line_length > 0) {
-            Eval_PrintTokens(line);
+            Eval_PrintTokens(line, NULL);
             free(line);
         } else if (line_length == -1) {
             if (feof(stdin)) return 0;

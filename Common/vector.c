@@ -51,6 +51,7 @@ static void Vec_Grow(vector_t * vector) {
 
 /**
  * Allocates a new vector
+ * @todo Ability to adjust LENGTH_INCREMENT
  * @returns A pointer to the newly allocated vector
  */
 vector_t * Vec_New() {

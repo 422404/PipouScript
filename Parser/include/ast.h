@@ -8,6 +8,7 @@
 #include "tokens.h"
 
 typedef enum {
+    _ROOT_,
     DECL,
     AFFECT,
     OBJ_FIELD_NAME,
@@ -33,6 +34,11 @@ typedef enum {
 
 struct ast_node_s;
 typedef struct ast_node_s ast_node_t;
+
+typedef struct ast_root_s {
+    /** vector_t<ast_statement *> */
+    vector_t * statements;
+} ast_root_t;
 
 typedef struct ast_identifier_s {
     char * value;
@@ -64,6 +70,7 @@ typedef struct ast_affect_s {
 } ast_affect_t;
 
 typedef struct ast_obj_field_init_s {
+    ast_node_t * ident;
     ast_node_t * value;
 } ast_obj_field_init_t;
 
@@ -143,6 +150,7 @@ struct ast_node_s {
     ast_node_type_t type;
     // loc_t loc;
     union {
+        ast_root_t           as_root;
         ast_identifier_t     as_ident;
         ast_string_t         as_string;
         ast_int_t            as_int;
@@ -165,8 +173,8 @@ struct ast_node_s {
 };
 
 /**
- * Allocates a new node
- * @param type Node type
+ * Allocates a new AST node
+ * @param type AST node type
  * @returns    A pointer to the newly allocated node
  */
 ast_node_t * ASTNode_New(ast_node_type_t type);
@@ -176,3 +184,10 @@ ast_node_t * ASTNode_New(ast_node_type_t type);
  * @param[int] node The node to free
  */
 void ASTNode_Free(ast_node_t * node);
+
+/**
+ * Builds the string representation of an AST node
+ * @param[in] node The node to build the string from
+ * @returns        The string representation of the node
+ */
+char * ASTNode_ToString(ast_node_t * node);

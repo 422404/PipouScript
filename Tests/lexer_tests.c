@@ -11,6 +11,7 @@ static char * test_buf4 = "% \"abcd efgh\\nwow!\" *";
 static char * test_buf5 = "\"   ";
 static char * test_buf6 = "abcd \"abcd\" // comment \"not a string\"";
 static char * test_buf7 = "10 1337 1234.0 456.7e89";
+static char * test_buf8 = ":= == : =";
 
 // test_buf1
 token_t expected_tokens1[] = {
@@ -48,6 +49,14 @@ token_t expected_tokens5[] = {
     {TOKTYPE_INT,      {{1,  4, NULL}, {1,  7, NULL}}},
     {TOKTYPE_INT,      {{1,  9, NULL}, {1, 14, NULL}}},
     {TOKTYPE_INT,      {{1, 15, NULL}, {1, 23, NULL}}}
+};
+
+// test_buf8
+token_t expected_tokens6[] = {
+    {TOKTYPE_COLEQUAL, {{1, 1, NULL}, {1, 2, NULL}}},
+    {TOKTYPE_EQEQUAL,  {{1, 4, NULL}, {1, 5, NULL}}},
+    {TOKTYPE_COLON,    {{1, 7, NULL}, {1, 7, NULL}}},
+    {TOKTYPE_EQUAL,    {{1, 9, NULL}, {1, 9, NULL}}}
 };
 
 static inline void MatchTokens(lexer_t * lexer, token_t expected_tokens[], size_t expected_tokens_length, bool preserve_ws) {
@@ -148,6 +157,16 @@ void Test_LexerUnterminatedStringError(void) {
     assert_true(token == NULL);
     assert_int_equal(LEX_ERROR, Lex_GetStatus(lexer));
     Lex_Free(lexer);
+    Err_SetError(NULL);
+}
+
+void Test_LexerMulticharOperators(void) {
+    lexer_t * lexer;
+
+    lexer = Lex_New(test_buf8, strlen(test_buf8), NULL);
+    assert_true(lexer != NULL);
+    MatchTokens(lexer, expected_tokens6, 4, false);
+    Lex_Free(lexer);
 }
 
 /**
@@ -161,5 +180,6 @@ void Test_LexerTests(void) {
     run_test(Test_LexerEOF);
     run_test(Test_LexerCompoundTokens);
     run_test(Test_LexerUnterminatedStringError);
+    run_test(Test_LexerMulticharOperators);
     test_fixture_end();
 }
