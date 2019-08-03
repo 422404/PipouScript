@@ -84,6 +84,7 @@ ast_node_t * ASTNode_New(ast_node_type_t type) {
  * @param[int] node The node to free
  */
 void ASTNode_Free(ast_node_t * node) {
+    if (!node) Err_Throw(Err_New("NULL pointer to AST node"));
     switch (node->type) {
         case NODE__ROOT_:
             Vec_Free(node->as_root.statements);
@@ -152,6 +153,7 @@ void ASTNode_Free(ast_node_t * node) {
         default:
             break;
     }
+    free(node);
 }
 
 /**
@@ -161,6 +163,8 @@ void ASTNode_Free(ast_node_t * node) {
  */
 char * ASTNode_ToString(ast_node_t * node) {
     char * string = NULL;
+
+    if (!node) Err_Throw(Err_New("NULL pointer to AST node"));
     switch (node->type) {
         case NODE__ROOT_:
             string = strdup("ASTRootNode { }");
