@@ -48,6 +48,25 @@ void Parser_Free(parser_t * parser) {
     else Err_Throw(Err_New("NULL pointer to parser"));
 }
 
+static ast_node_t * Parser_ParseIdentifier(parser_t * parser);
+static ast_node_t * Parser_ParseString(parser_t * parser);
+static ast_node_t * Parser_ParseInt(parser_t * parser);
+static ast_node_t * Parser_ParseDouble(parser_t * parser);
+static ast_node_t * Parser_ParseDecl(parser_t * parser);
+static ast_node_t * Parser_ParseAffect(parser_t * parser);
+static ast_node_t * Parser_ParseObjFieldInit(parser_t * parser);
+static ast_node_t * Parser_ParseMsgSel(parser_t * parser);
+static ast_node_t * Parser_ParseObjMsgDef(parser_t * parser);
+static ast_node_t * Parser_ParseObjLitteral(parser_t * parser);
+static ast_node_t * Parser_ParseObjFieldName(parser_t * parser);
+static ast_node_t * Parser_ParseArrayLitteral(parser_t * parser);
+static ast_node_t * Parser_ParseBlock(parser_t * parser);
+static ast_node_t * Parser_ParseArrayAccess(parser_t * parser);
+static ast_node_t * Parser_ParseDottedExpr(parser_t * parser);
+static ast_node_t * Parser_ParseMsgPassExpr(parser_t * parser);
+static ast_node_t * Parser_ParseExpr(parser_t * parser);
+static ast_node_t * Parser_ParseStatement(parser_t * parser);
+
 /**
  * Parse the code and create the raw AST for it
  * @param[in] parser The parser used to generate the AST
@@ -55,6 +74,5 @@ void Parser_Free(parser_t * parser) {
  */
 ast_node_t * Parser_CreateAST(parser_t * parser) {
     UNUSED(parser);
-    return NULL;
+    return ASTNode_New(NODE__ROOT_);
 }
-

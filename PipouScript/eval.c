@@ -11,6 +11,8 @@
 #include "tokens.h"
 #include "token.h"
 #include "lexer.h"
+#include "Parser/include/parser.h"
+#include "ast.h"
 
 #ifdef BUILD_VERSION
 #define PRINT_VERSION BUILD_VERSION
@@ -36,7 +38,7 @@ static ssize_t Eval_ReadLine(char ** line_ptr, size_t * len) {
  * @param[in] buffer   The buffer to extract the tokens from
  * @param[in] filename The name of the file that contains the code
  */
-void Eval_PrintTokens(char * buffer, char * filename) {
+static void Eval_PrintTokens(char * buffer, char * filename) {
     lexer_t * lexer;
     token_t * token;
 
@@ -45,7 +47,7 @@ void Eval_PrintTokens(char * buffer, char * filename) {
         token = Lex_NextToken(lexer, false);
         if (token) {
             char * token_string = Token_ToString(token);
-            printf("%s\n", token_string);
+            printf("\n%s\n", token_string);
             free(token_string);
         }
         if (Lex_GetStatus(lexer) == LEX_ERROR) {
@@ -54,6 +56,28 @@ void Eval_PrintTokens(char * buffer, char * filename) {
         }
     }
     Lex_Free(lexer);
+}
+
+/**
+ * Prints the AST from a buffer that contains code
+ * @param[in] buffer   The buffer to extract the AST from
+ * @param[in] filename The name of the file that contains the code
+ */
+static void Eval_PrintAST(char * buffer, char * filename) {
+    parser_t * parser;
+    ast_node_t * ast_root;
+
+    parser = Parser_New(buffer, strlen(buffer), filename, true);
+    ast_root = Parser_CreateAST(parser);
+    if (ast_root) {
+        char * ast_string = ASTNode_ToString(ast_root);
+        printf("\n%s\n", ast_string);
+        free(ast_string);
+    } else {
+        Err_Print(Err_GetError());
+        Err_SetError(NULL);
+    }
+    Parser_Free(parser);
 }
 
 /**
@@ -71,7 +95,9 @@ int Eval_REPL() {
         printf(":> ");
         line_length = Eval_ReadLine(&line, &tmp);
         if (line_length > 0) {
+            /// @todo only when some flag is set
             Eval_PrintTokens(line, NULL);
+            Eval_PrintAST(line, NULL);
             free(line);
         } else if (line_length == -1) {
             if (feof(stdin)) return 0;

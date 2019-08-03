@@ -54,14 +54,9 @@ error_t * Err_GetError(void) {
  */
 error_t * Err_New(char * message) {
     error_t * error;
-    char * msg_copy;
-    size_t msg_buf_length;
 
     error = (error_t *)malloc(sizeof(error_t));
-    msg_buf_length = strlen(message) + 1;
-    msg_copy = (char *)malloc(msg_buf_length);
-    memcpy(msg_copy, message, msg_buf_length);
-    error->message = msg_copy;
+    error->message = strdup(message);
     return error;
 }
 

@@ -14,11 +14,14 @@ typedef struct {
     /** The buffer where the elements are stored */
     void ** buffer;
 
-    /**The maximum length of the buffer before any reallocation is needed */
+    /** The maximum length of the buffer before any reallocation is needed */
     size_t max_length;
 
     /** Current length of the vector */
     size_t length;
+
+    /** The length of each length increments */
+    size_t increment_length;
 } vector_t;
 
 /**
@@ -26,6 +29,13 @@ typedef struct {
  * @returns A pointer to the newly allocated vector
  */
 vector_t * Vec_New();
+
+/**
+ * Allocates a new vector
+ * @param increment_length Length of each increment in reallocation
+ * @returns A pointer to the newly allocated vector
+ */
+vector_t * Vec_NewWithIncrementLength(size_t increment_length);
 
 /**
  * Frees an allocated vector

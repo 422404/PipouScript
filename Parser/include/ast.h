@@ -8,28 +8,32 @@
 #include "tokens.h"
 
 typedef enum {
-    _ROOT_,
-    DECL,
-    AFFECT,
-    OBJ_FIELD_NAME,
-    OBJ_FIELD_INIT,
-    MSG_SEL,
-    OBJ_MSG_DEF,
-    OBJ_LITTERAL,
-    ARRAY_LITTERAL,
-    BLOCK,
-    ARRAY_ACCESS,
-    DOTTED_EXPR,
-    MSG_PASS_EXPR,
-    OR_EXPR,
-    AND_EXPR,
-    COMP_EXPR,
-    ARITH_EXPR,
-    TERM_EXPR,
-    FACTOR_EXPR,
-    UNARY_EXPR,
-    ATOM_EXPR,
-    STATEMENT
+    NODE__ROOT_,
+    NODE_IDENTIFIER,
+    NODE_STRING,
+    NODE_INT,
+    NODE_DOUBLE,
+    NODE_DECL,
+    NODE_AFFECT,
+    NODE_OBJ_FIELD_NAME,
+    NODE_OBJ_FIELD_INIT,
+    NODE_MSG_SEL,
+    NODE_OBJ_MSG_DEF,
+    NODE_OBJ_LITTERAL,
+    NODE_ARRAY_LITTERAL,
+    NODE_BLOCK,
+    NODE_ARRAY_ACCESS,
+    NODE_DOTTED_EXPR,
+    NODE_MSG_PASS_EXPR,
+    NODE_OR_EXPR,
+    NODE_AND_EXPR,
+    NODE_COMP_EXPR,
+    NODE_ARITH_EXPR,
+    NODE_TERM_EXPR,
+    NODE_FACTOR_EXPR,
+    NODE_UNARY_EXPR,
+    NODE_ATOM_EXPR,
+    NODE_STATEMENT
 } ast_node_type_t;
 
 struct ast_node_s;
@@ -123,7 +127,7 @@ typedef struct ast_msg_pass_expr_s {
 } ast_msg_pass_expr_t;
 
 /**
- * Represents expr, or_expr, and_expr, comp_expr, arith_expr, term_expr,
+ * Represents or_expr, and_expr, comp_expr, arith_expr, term_expr,
  * factor_expr, unary_expr and atom_expr
  */
 typedef struct ast_expr_s {

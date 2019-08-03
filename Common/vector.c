@@ -8,7 +8,7 @@
 #include "error.h"
 #include "vector.h"
 
-#define LENGTH_INCREMENT 50
+#define INCREMENT_LENGTH 50
 
 /**
  * Tests if an index is in the bounds of a vector
@@ -35,13 +35,13 @@ static bool Vec_MustGrow(vector_t * vector) {
 }
 
 /**
- * Grows the vector by LENGTH_INCREMENT elements
+ * Grows the vector by vector->increment_length elements
  * @private
  * @param[in] vector A pointer to the vector
  */
 static void Vec_Grow(vector_t * vector) {
     void * buf;
-    size_t new_length = vector->max_length + LENGTH_INCREMENT;
+    size_t new_length = vector->max_length + vector->increment_length;
     buf = realloc(vector->buffer, new_length * sizeof(void *));
     if (buf) {
         vector->buffer = buf;
@@ -51,7 +51,6 @@ static void Vec_Grow(vector_t * vector) {
 
 /**
  * Allocates a new vector
- * @todo Ability to adjust LENGTH_INCREMENT
  * @returns A pointer to the newly allocated vector
  */
 vector_t * Vec_New() {
@@ -60,9 +59,22 @@ vector_t * Vec_New() {
     if (vector) {
         vector->length = vector->max_length = 0;
         vector->buffer = NULL;
+        vector->increment_length = INCREMENT_LENGTH;
     } else {
         Err_Throw(Err_New("Cannot allocate vector"));
     }
+    return vector;
+}
+
+/**
+ * Allocates a new vector
+ * @param increment_length Length of each increment in reallocation
+ * @returns                A pointer to the newly allocated vector
+ */
+vector_t * Vec_NewWithIncrementLength(size_t increment_length) {
+    vector_t * vector = Vec_New();
+    vector->increment_length = increment_length;
+
     return vector;
 }
 
