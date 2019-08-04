@@ -17,6 +17,12 @@ typedef struct {
 
     /** Token span */
     span_t span;
+
+    /**
+     * Value of the token
+     * Useful for "special" tokens
+     */
+    char * value;
 } token_t;
 
 /**
@@ -28,11 +34,12 @@ bool Token_IsWhitespace(token_t * token);
 
 /**
  * Allocates a new token
- * @param type Token type
- * @param span Span of the token
- * @returns    A pointer to the newly allocated token
+ * @param     type  Token type
+ * @param     span  Span of the token
+ * @param[in] value Value of the token in case of a "special" token
+ * @returns         A pointer to the newly allocated token
  */
-token_t * Token_New(token_type_t type, span_t span);
+token_t * Token_New(token_type_t type, span_t span, char * value);
 
 /**
  * Frees a token

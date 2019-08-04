@@ -15,48 +15,48 @@ static char * test_buf8 = ":= == : =";
 
 // test_buf1
 token_t expected_tokens1[] = {
-    {TOKTYPE_LCBRACKET,  {{1, 1, NULL}, {1, 1, NULL}}},
-    {TOKTYPE_RSBRACKET,  {{1, 2, NULL}, {1, 2, NULL}}},
-    {TOKTYPE_NEWLINE,    {{1, 3, NULL}, {1, 3, NULL}}},
-    {TOKTYPE_RPAREN,     {{2, 1, NULL}, {2, 1, NULL}}},
-    {TOKTYPE_PERCENT,    {{2, 2, NULL}, {2, 2, NULL}}},
-    {TOKTYPE_SPACE,      {{2, 3, NULL}, {2, 3, NULL}}}
+    {TOKTYPE_LCBRACKET,  {{1, 1, NULL}, {1, 1, NULL}}, NULL},
+    {TOKTYPE_RSBRACKET,  {{1, 2, NULL}, {1, 2, NULL}}, NULL},
+    {TOKTYPE_NEWLINE,    {{1, 3, NULL}, {1, 3, NULL}}, NULL},
+    {TOKTYPE_RPAREN,     {{2, 1, NULL}, {2, 1, NULL}}, NULL},
+    {TOKTYPE_PERCENT,    {{2, 2, NULL}, {2, 2, NULL}}, NULL},
+    {TOKTYPE_SPACE,      {{2, 3, NULL}, {2, 3, NULL}}, NULL}
 };
 
 // test_buf2
 token_t expected_tokens2[] = {
-    {TOKTYPE_LSBRACKET,  {{1, 5, NULL}, {1, 5, NULL}}},
-    {TOKTYPE_PERCENT,    {{2, 1, NULL}, {2, 1, NULL}}}
+    {TOKTYPE_LSBRACKET,  {{1, 5, NULL}, {1, 5, NULL}}, NULL},
+    {TOKTYPE_PERCENT,    {{2, 1, NULL}, {2, 1, NULL}}, NULL}
 };
 
 // test_buf4
 token_t expected_tokens3[] = {
-    {TOKTYPE_PERCENT,    {{1,  1, NULL}, {1,  1, NULL}}},
-    {TOKTYPE_STRING,     {{1,  3, NULL}, {1, 19, NULL}}},
-    {TOKTYPE_STAR,       {{1, 21, NULL}, {1, 21, NULL}}}
+    {TOKTYPE_PERCENT,    {{1,  1, NULL}, {1,  1, NULL}}, NULL                  },
+    {TOKTYPE_STRING,     {{1,  3, NULL}, {1, 19, NULL}}, "\"abcd efgh\\nwow!\""},
+    {TOKTYPE_STAR,       {{1, 21, NULL}, {1, 21, NULL}}, NULL                  }
 };
 
 // test_buf6
 token_t expected_tokens4[] = {
-    {TOKTYPE_IDENT,      {{1,  1, NULL}, {1,  4, NULL}}},
-    {TOKTYPE_STRING,     {{1,  6, NULL}, {1, 11, NULL}}},
-    {TOKTYPE_COMMENT,    {{1, 13, NULL}, {1, 37, NULL}}}
+    {TOKTYPE_IDENT,      {{1,  1, NULL}, {1,  4, NULL}}, "abcd"                       },
+    {TOKTYPE_STRING,     {{1,  6, NULL}, {1, 11, NULL}}, "\"abcd\""                   },
+    {TOKTYPE_COMMENT,    {{1, 13, NULL}, {1, 37, NULL}}, "// comment \"not a string\""}
 };
 
 // test_buf7
 token_t expected_tokens5[] = {
-    {TOKTYPE_INT,      {{1,  1, NULL}, {1,  2, NULL}}},
-    {TOKTYPE_INT,      {{1,  4, NULL}, {1,  7, NULL}}},
-    {TOKTYPE_INT,      {{1,  9, NULL}, {1, 14, NULL}}},
-    {TOKTYPE_INT,      {{1, 15, NULL}, {1, 23, NULL}}}
+    {TOKTYPE_INT,      {{1,  1, NULL}, {1,  2, NULL}}, NULL},
+    {TOKTYPE_INT,      {{1,  4, NULL}, {1,  7, NULL}}, NULL},
+    {TOKTYPE_INT,      {{1,  9, NULL}, {1, 14, NULL}}, NULL},
+    {TOKTYPE_INT,      {{1, 15, NULL}, {1, 23, NULL}}, NULL}
 };
 
 // test_buf8
 token_t expected_tokens6[] = {
-    {TOKTYPE_COLEQUAL, {{1, 1, NULL}, {1, 2, NULL}}},
-    {TOKTYPE_EQEQUAL,  {{1, 4, NULL}, {1, 5, NULL}}},
-    {TOKTYPE_COLON,    {{1, 7, NULL}, {1, 7, NULL}}},
-    {TOKTYPE_EQUAL,    {{1, 9, NULL}, {1, 9, NULL}}}
+    {TOKTYPE_COLEQUAL, {{1, 1, NULL}, {1, 2, NULL}}, NULL},
+    {TOKTYPE_EQEQUAL,  {{1, 4, NULL}, {1, 5, NULL}}, NULL},
+    {TOKTYPE_COLON,    {{1, 7, NULL}, {1, 7, NULL}}, NULL},
+    {TOKTYPE_EQUAL,    {{1, 9, NULL}, {1, 9, NULL}}, NULL}
 };
 
 static inline void MatchTokens(lexer_t * lexer, token_t expected_tokens[], size_t expected_tokens_length, bool preserve_ws) {

@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <string.h>
 #include "misc.h"
 #include "token.h"
 #include "lexer.h"
@@ -249,12 +250,12 @@ static token_t * Lex_ParseSimpleToken(lexer_t * lexer) {
             Lex_IncrementCurrentChar(lexer);
             token_span.start = token_start;
             token_span.end   = token_end;
-            token = Token_New(token_type, token_span);
+            token = Token_New(token_type, token_span, NULL);
         } else {
             lexer->status = LEX_ERROR;
             char * buf = malloc(100);
             /// @todo Add filename indication
-            snprintf(buf, 100, "Unrecognized token '%c' (%ld:%ld)", c, lexer->pos.line, lexer->pos.col);
+            snprintf(buf, 100, "Unrecognized char '%c' (%ld:%ld)", c, lexer->pos.line, lexer->pos.col);
             Err_SetError(Err_New(buf));
             free(buf);
         }
@@ -369,6 +370,9 @@ static token_t * Lex_ParseCompoundToken(lexer_t * lexer) {
     token_t * token = NULL;
     token_type_t token_type = TOKTYPE_NOTTOKEN;
     span_t token_span = {lexer->pos, lexer->pos};
+    char * token_value = NULL;
+    char * token_start_char = lexer->current_char;
+    size_t token_value_length;
 
     if (lexer->status != LEX_EOF && lexer->status != LEX_ERROR) {
         if (Lex_TryParseIdentifier(lexer)) {
@@ -397,8 +401,12 @@ static token_t * Lex_ParseCompoundToken(lexer_t * lexer) {
 
         if (token_type != TOKTYPE_NOTTOKEN) {
             token_span.end = lexer->pos;
-            token = Token_New(token_type, token_span);
-            Lex_IncrementCurrentChar(lexer);
+            Lex_IncrementCurrentChar(lexer); // always increment before extracting the value
+            token_value_length = lexer->current_char - token_start_char;
+            token_value = (char *)calloc(1, token_value_length + 1);
+            memcpy(token_value, token_start_char, token_value_length);
+            token = Token_New(token_type, token_span, token_value);
+            free(token_value);
         }
     }
     return token;

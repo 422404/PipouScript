@@ -43,11 +43,12 @@ static void Eval_PrintTokens(char * buffer, char * filename) {
     token_t * token;
 
     lexer = Lex_New(buffer, strlen(buffer), filename);
+    printf("\n");
     while (Lex_GetStatus(lexer) == LEX_OK) {
         token = Lex_NextToken(lexer, false);
         if (token) {
             char * token_string = Token_ToString(token);
-            printf("\n%s\n", token_string);
+            printf("%s\n", token_string);
             free(token_string);
         }
         if (Lex_GetStatus(lexer) == LEX_ERROR) {
