@@ -6,7 +6,6 @@
 #include <sys/types.h>
 #include <stdbool.h>
 #include "error.h"
-#include "tokens.h"
 #include "token.h"
 #include "location.h"
 
@@ -61,14 +60,15 @@ void Lex_Free(lexer_t * lexer);
 
 /**
  * Try to extract the next token in the buffer
- * @param[in]  lexer       The lexer used to extract the token
- * @param      preserve_ws When set to true tokens categorized
- *                         as whitespaces will not be ignored
+ * @param[in]  lexer                The lexer used to extract the token
+ * @param      preserve_whitespaces When set to true tokens categorized
+ *                                  as whitespaces will not be ignored
+ * @param      preserve_comments    When set to true comments will not be ignored
  * @retval A pointer to the newly extracted token
  * @retval NULL if an error occured
  *         Call Lex_GetStatus() for more info
  */
-token_t * Lex_NextToken(lexer_t * lexer, bool preserve_ws);
+token_t * Lex_NextToken(lexer_t * lexer, bool preserve_whitespaces, bool preserve_comments);
 
 /**
  * Gets the current status of the lexer

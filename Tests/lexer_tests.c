@@ -59,11 +59,12 @@ token_t expected_tokens6[] = {
     {TOKTYPE_EQUAL,    {{1, 9, NULL}, {1, 9, NULL}}, NULL}
 };
 
-static inline void MatchTokens(lexer_t * lexer, token_t expected_tokens[], size_t expected_tokens_length, bool preserve_ws) {
+static inline void MatchTokens(lexer_t * lexer, token_t expected_tokens[], size_t expected_tokens_length,
+                               bool preserve_whitespaces, bool preserve_comments) {
     token_t * token;
 
     for (size_t i = 0; i < expected_tokens_length; i++) {
-        token = Lex_NextToken(lexer, preserve_ws);
+        token = Lex_NextToken(lexer, preserve_whitespaces, preserve_comments);
         assert_true(token != NULL);
         if (token) {
             assert_int_equal(expected_tokens[i].type,            token->type);
@@ -94,7 +95,7 @@ void Test_LexerBasicTokenRecognition(void) {
 
     lexer = Lex_New(test_buf1, strlen(test_buf1), NULL);
     assert_true(lexer != NULL);
-    MatchTokens(lexer, expected_tokens1, 6, true);
+    MatchTokens(lexer, expected_tokens1, 6, true, false);
     Lex_Free(lexer);
 }
 
@@ -103,7 +104,7 @@ void Test_LexerBasicSkipWhitespaces(void) {
 
     lexer = Lex_New(test_buf2, strlen(test_buf2), NULL);
     assert_true(lexer != NULL);
-    MatchTokens(lexer, expected_tokens2, 2, false);
+    MatchTokens(lexer, expected_tokens2, 2, false, false);
     Lex_Free(lexer);
 }
 
@@ -113,14 +114,14 @@ void Test_LexerEOF(void) {
 
     lexer = Lex_New(test_buf3, strlen(test_buf3), NULL);
     assert_true(lexer != NULL);
-    token = Lex_NextToken(lexer, false);
+    token = Lex_NextToken(lexer, false, false);
     assert_true(token != NULL);
     assert_int_equal(TOKTYPE_STAR, token->type);
     // there's only one token so we have reached buffer end
     assert_int_equal(LEX_EOF, Lex_GetStatus(lexer));
     assert_true(token->span.start.filename == NULL);
     Token_Free(token);
-    token = Lex_NextToken(lexer, false);
+    token = Lex_NextToken(lexer, false, false);
     // no token can be extracted
     assert_true(token == NULL);
     // lexer status keeps beeing LEX_EOF
@@ -133,17 +134,17 @@ void Test_LexerCompoundTokens(void) {
 
     lexer = Lex_New(test_buf4, strlen(test_buf4), NULL);
     assert_true(lexer != NULL);
-    MatchTokens(lexer, expected_tokens3, 3, false);
+    MatchTokens(lexer, expected_tokens3, 3, false, false);
     Lex_Free(lexer);
 
     lexer = Lex_New(test_buf6, strlen(test_buf6), NULL);
     assert_true(lexer != NULL);
-    MatchTokens(lexer, expected_tokens4, 3, false);
+    MatchTokens(lexer, expected_tokens4, 3, false, true);
     Lex_Free(lexer);
 
     lexer = Lex_New(test_buf7, strlen(test_buf7), NULL);
     assert_true(lexer != NULL);
-    MatchTokens(lexer, expected_tokens5, 2, false);
+    MatchTokens(lexer, expected_tokens5, 2, false, false);
     Lex_Free(lexer);
 }
 
@@ -153,7 +154,7 @@ void Test_LexerUnterminatedStringError(void) {
 
     lexer = Lex_New(test_buf5, strlen(test_buf5), NULL);
     assert_true(lexer != NULL);
-    token = Lex_NextToken(lexer, false);
+    token = Lex_NextToken(lexer, false, false);
     assert_true(token == NULL);
     assert_int_equal(LEX_ERROR, Lex_GetStatus(lexer));
     Lex_Free(lexer);
@@ -165,7 +166,7 @@ void Test_LexerMulticharOperators(void) {
 
     lexer = Lex_New(test_buf8, strlen(test_buf8), NULL);
     assert_true(lexer != NULL);
-    MatchTokens(lexer, expected_tokens6, 4, false);
+    MatchTokens(lexer, expected_tokens6, 4, false, false);
     Lex_Free(lexer);
 }
 

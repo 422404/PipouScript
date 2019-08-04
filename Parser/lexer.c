@@ -431,19 +431,21 @@ static token_t * Lex_ParseNextToken(lexer_t * lexer) {
 
 /**
  * Try to extract the next token in the buffer
- * @param[in]  lexer       The lexer used to extract the token
- * @param      preserve_ws When set to true tokens categorized
- *                         as whitespaces will not be ignored
+ * @param[in]  lexer                The lexer used to extract the token
+ * @param      preserve_whitespaces When set to true tokens categorized
+ *                                  as whitespaces will not be ignored
+ * @param      preserve_comments    When set to true comments will not be ignored
  * @retval A pointer to the newly extracted token
  * @retval NULL if an error occured
  *         Call Lex_GetStatus() for more info
  */
-token_t * Lex_NextToken(lexer_t * lexer, bool preserve_ws) {
+token_t * Lex_NextToken(lexer_t * lexer, bool preserve_whitespaces, bool preserve_comments) {
     token_t * token;
 
     while(true) {
         token = Lex_ParseNextToken(lexer);
-        if (token && !preserve_ws && Token_IsWhitespace(token)) {
+        if (token && ((!preserve_whitespaces && Token_IsWhitespace(token))
+                      || (!preserve_comments && token->type == TOKTYPE_COMMENT))) {
             Token_Free(token);
         } else {
             break;
