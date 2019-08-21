@@ -1,11 +1,10 @@
 decl = IDENT COLEQUAL expr SEMICOLON
 
-affect = [ dotted_expr DOT ] object_field_name EQUAL expr SEMICOLON
+affect = dotted_expr EQUAL expr SEMICOLON
 
 obj_field_init = IDENT COLON expr
 
-msg_sel = IDENT
-        | IDENT COLON IDENT { IDENT COLON IDENT }
+msg_sel = IDENT [ COLON IDENT { IDENT COLON IDENT } ]
 
 obj_msg_def = msg_sel LCBRACKET { statement } RCBRACKET
 
@@ -13,7 +12,7 @@ obj_litteral = LCBRACKET [ (obj_field_init | obj_msg_def)
                            { COMMA (obj_field_init | obj_msg_def) } [ COMMA ] ] RCBRACKET
 
 obj_field_name = IDENT
-               | HASH IDENT { COLON IDENT } [ COLON ]
+               | HASH IDENT { COLON IDENT }
 
 array_litteral = LSBRACKET [ expr { COMMA expr } [ COMMA ] ] RSBRACKET
 
@@ -28,9 +27,9 @@ litteral = obj_litteral
           | double_expr
           | string_expr
 
-array_access = LCBRACKET expr RCBRACKET
+array_access = LSBRACKET expr RSBRACKET
 
-dotted_expr = IDENT [ array_access ] { DOT IDENT [ array_access ] }
+dotted_expr = obj_field_name { array_access } { DOT obj_field_name { array_access } }
 
 msg_pass_expr = atom_expr IDENT [ COLON atom_expr { IDENT COLON atom_expr } ]
 
@@ -64,8 +63,6 @@ atom_expr = dotted_expr
           | unary_expr
           | LPAREN expr RPAREN
 
-statement = COMMENT
-          | (decl | affect | expr SEMICOLON | CIRCUMFLEX expr | expr) [ COMMENT ]
+statement = CIRCUMFLEX expr | mod_statement | expr
 
-mod_statement = COMMENT
-              | (decl | affect | expr SEMICOLON) [ COMMENT ]
+mod_statement = decl | affect | expr SEMICOLON
