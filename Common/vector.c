@@ -162,3 +162,26 @@ size_t Vec_GetLength(vector_t * vector) {
 size_t Vec_GetMaxLength(vector_t * vector) {
     return vector->max_length;
 }
+
+/**
+ * Replace each element by the result of the invokation of a
+ * given function that is passed the element as argument
+ * @param[in] vector A pointer to the vector
+ * @param[in] func   The function to use
+ */
+void Vec_Map(vector_t * vector, void * (*func)(void *)) {
+    for (size_t i = 0; i < vector->length; i++) {
+        Vec_SetAt(vector, i, func(Vec_GetAt(vector, i)));
+    }
+}
+
+/**
+ * Execute a given function on each element
+ * @param[in] vector A pointer to the vector
+ * @param[in] func   The function to use
+ */
+void Vec_ForEach(vector_t * vector, void (*func)(void *)) {
+    for (size_t i = 0; i < vector->length; i++) {
+        func(Vec_GetAt(vector, i));
+    }
+}

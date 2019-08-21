@@ -87,3 +87,18 @@ size_t Vec_GetLength(vector_t * vector);
  * @returns          The max length of the vector
  */
 size_t Vec_GetMaxLength(vector_t * vector);
+
+/**
+ * Replace each element by the result of the invokation of a
+ * given function that is passed the element as argument
+ * @param[in] vector A pointer to the vector
+ * @param[in] func   The function to use
+ */
+void Vec_Map(vector_t * vector, void * (*func)(void *));
+
+/**
+ * Execute a given function on each element
+ * @param[in] vector A pointer to the vector
+ * @param[in] func   The function to use
+ */
+void Vec_ForEach(vector_t * vector, void (*func)(void *));
