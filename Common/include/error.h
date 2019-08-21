@@ -3,12 +3,16 @@
  * Errors implementation
  */
 #pragma once
+#include <stdbool.h>
+#include "location.h"
 
 typedef struct {
     /**
      * Description of the error
      */
     char * message;
+    bool with_location;
+    loc_t location;
 } error_t;
 
 /**
@@ -43,6 +47,16 @@ error_t * Err_GetError(void);
  * @returns           The newly allocated error
  */
 error_t * Err_New(char * message);
+
+/**
+ * Allocates a new error
+ * @param[in] massage  The message to associate to the error
+ *                     (a copy will be performed)
+ * @param     location The location to be linked with the error
+ *                     (a copy of the filename will be performed)
+ * @returns            The newly allocated error
+ */
+error_t * Err_NewWithLocation(char * message, loc_t location);
 
 /**
  * Frees a previously allocated error
