@@ -66,10 +66,7 @@ typedef struct ast_decl_s {
 } ast_decl_t;
 
 typedef struct ast_affect_s {
-    struct {
-        ast_node_t * name_base;
-        ast_node_t * field_name;
-    } lval;
+    ast_node_t * lval;
     ast_node_t * rval;
 } ast_affect_t;
 
@@ -117,7 +114,7 @@ typedef struct ast_array_access_s {
 } ast_array_access_t;
 
 typedef struct ast_dotted_expr_s {
-    /** vector_t<ast_array_access_t * | ast_identifier_t *> */
+    /** vector_t<ast_array_access_t * | ast_obj_field_name_t *> */
     vector_t * components;
 } ast_dotted_expr_t;
 
@@ -155,7 +152,7 @@ struct ast_node_s {
     // loc_t loc;
     union {
         ast_root_t           as_root;
-        ast_identifier_t     as_ident;
+        ast_identifier_t     as_ident; ///< @todo rename to as_identifier
         ast_string_t         as_string;
         ast_int_t            as_int;
         ast_double_t         as_double;

@@ -87,6 +87,7 @@ void ASTNode_Free(ast_node_t * node) {
     if (!node) Err_Throw(Err_New("NULL pointer to AST node"));
     switch (node->type) {
         case NODE__ROOT_:
+            Vec_ForEach(node->as_root.statements, (void (*)(void *))ASTNode_Free);
             Vec_Free(node->as_root.statements);
             break;
         case NODE_IDENTIFIER:
@@ -100,11 +101,11 @@ void ASTNode_Free(ast_node_t * node) {
             ASTNode_Free(node->as_decl.rval);
             break;
         case NODE_AFFECT:
-            ASTNode_Free(node->as_affect.lval.name_base);
-            ASTNode_Free(node->as_affect.lval.field_name);
+            ASTNode_Free(node->as_affect.lval);
             ASTNode_Free(node->as_affect.rval);
             break;
         case NODE_OBJ_FIELD_NAME:
+            Vec_ForEach(node->as_obj_field_name.components, (void (*)(void *))ASTNode_Free);
             Vec_Free(node->as_obj_field_name.components);
             break;
         case NODE_OBJ_FIELD_INIT:
@@ -112,29 +113,37 @@ void ASTNode_Free(ast_node_t * node) {
             ASTNode_Free(node->as_obj_field_init.value);
             break;
         case NODE_MSG_SEL:
+            Vec_ForEach(node->as_msg_sel.ident_list, (void (*)(void *))ASTNode_Free);
             Vec_Free(node->as_msg_sel.ident_list);
             break;
         case NODE_OBJ_MSG_DEF:
+            Vec_ForEach(node->as_obj_msg_def.statements, (void (*)(void *))ASTNode_Free);
             Vec_Free(node->as_obj_msg_def.statements);
             ASTNode_Free(node->as_obj_msg_def.selector);
             break;
         case NODE_OBJ_LITTERAL:
+            Vec_ForEach(node->as_obj_litteral.obj_fields, (void (*)(void *))ASTNode_Free);
             Vec_Free(node->as_obj_litteral.obj_fields);
             break;
         case NODE_ARRAY_LITTERAL:
+            Vec_ForEach(node->as_array_litteral.items, (void (*)(void *))ASTNode_Free);
             Vec_Free(node->as_array_litteral.items);
             break;
         case NODE_BLOCK:
+            Vec_ForEach(node->as_block.params, (void (*)(void *))ASTNode_Free);
             Vec_Free(node->as_block.params);
+            Vec_ForEach(node->as_block.statements, (void (*)(void *))ASTNode_Free);
             Vec_Free(node->as_block.statements);
             break;
         case NODE_ARRAY_ACCESS:
             ASTNode_Free(node->as_array_access.index_expr);
             break;
         case NODE_DOTTED_EXPR:
+            Vec_ForEach(node->as_dotted_expr.components, (void (*)(void *))ASTNode_Free);
             Vec_Free(node->as_dotted_expr.components);
             break;
         case NODE_MSG_PASS_EXPR:
+            Vec_ForEach(node->as_msg_pass_expr.components, (void (*)(void *))ASTNode_Free);
             Vec_Free(node->as_msg_pass_expr.components);
             break;
         case NODE_OR_EXPR:
@@ -145,6 +154,7 @@ void ASTNode_Free(ast_node_t * node) {
         case NODE_FACTOR_EXPR:
         case NODE_UNARY_EXPR:
         case NODE_ATOM_EXPR:
+            Vec_ForEach(node->as_expr.values, (void (*)(void *))ASTNode_Free);
             Vec_Free(node->as_expr.values);
             break;
         case NODE_STATEMENT:
@@ -170,31 +180,79 @@ char * ASTNode_ToString(ast_node_t * node) {
             string = strdup("ASTRootNode { }");
             break;
         case NODE_IDENTIFIER:
+            string =  strdup("ASTIdentifierNode { }");
+            break;
         case NODE_STRING:
+            string =  strdup("ASTStringNode { }");
+            break;
         case NODE_INT:
+            string =  strdup("ASTIntNode { }");
+            break;
         case NODE_DOUBLE:
+            string =  strdup("ASTDoubleNode { }");
+            break;
         case NODE_DECL:
+            string =  strdup("ASTDeclNode { }");
+            break;
         case NODE_AFFECT:
+            string =  strdup("ASTAffectNode { }");
+            break;
         case NODE_OBJ_FIELD_NAME:
+            string =  strdup("ASTObjFieldNameNode { }");
+            break;
         case NODE_OBJ_FIELD_INIT:
+            string =  strdup("ASTObjFieldInitNode { }");
+            break;
         case NODE_MSG_SEL:
+            string =  strdup("ASTMsgSelNode { }");
+            break;
         case NODE_OBJ_MSG_DEF:
+            string =  strdup("ASTObjMsgDefNode { }");
+            break;
         case NODE_OBJ_LITTERAL:
+            string =  strdup("ASTObjLitteralNode { }");
+            break;
         case NODE_ARRAY_LITTERAL:
+            string =  strdup("ASTArrayLitteralNode { }");
+            break;
         case NODE_BLOCK:
+            string =  strdup("ASTBlockNode { }");
+            break;
         case NODE_ARRAY_ACCESS:
+            string =  strdup("ASTArrayAccessNode { }");
+            break;
         case NODE_DOTTED_EXPR:
+            string =  strdup("ASTDottedExprNode { }");
+            break;
         case NODE_MSG_PASS_EXPR:
+            string =  strdup("ASTMsgPassExprNode { }");
+            break;
         case NODE_OR_EXPR:
+            string =  strdup("ASTOrExprNode { }");
+            break;
         case NODE_AND_EXPR:
+            string =  strdup("ASTAndExprNode { }");
+            break;
         case NODE_COMP_EXPR:
+            string =  strdup("ASTCompExprNode { }");
+            break;
         case NODE_ARITH_EXPR:
+            string =  strdup("ASTArithExprNode { }");
+            break;
         case NODE_TERM_EXPR:
+            string =  strdup("ASTTermExprNode { }");
+            break;
         case NODE_FACTOR_EXPR:
+            string =  strdup("ASTFactorExprNode { }");
+            break;
         case NODE_UNARY_EXPR:
+            string =  strdup("ASTUnaryExprNode { }");
+            break;
         case NODE_ATOM_EXPR:
+            string =  strdup("ASTAtomExprNode { }");
+            break;
         case NODE_STATEMENT:
-            string =  strdup("ASTNode { }");
+            string =  strdup("ASTStatementNode { }");
             break;
     }
 
