@@ -7,7 +7,7 @@ const identifier = Diagram(
         "'$'",
         "'_'"),
     ZeroOrMore(
-        Sequence(
+        Choice(2,
             "'$'",
             "'_'",
             NonTerminalLink("letter"),
@@ -18,17 +18,19 @@ const identifier = Diagram(
 
 const letter = Diagram("'a'..'z', 'A'..'Z', 0xc0..0xff");
 
+const digit = Diagram(Choice(1, "'0'", "'1'", "...", "'9'"));
+
 const integer = Diagram(
     Optional("'-'"),
-    OneOrMore(Choice(1, "'0'", "'1'", "...", "'9'"))
+    OneOrMore(NonTerminalLink("digit"))
 );
 
 const double = Diagram(
     Optional("'-'"),
-    OneOrMore(Choice(1, "'0'", "'1'", "...", "'9'")),
+    OneOrMore(NonTerminalLink("digit")),
     "'.'",
-    OneOrMore(Choice(1, "'0'", "'1'", "...", "'9'")),
-    Optional(Sequence("'e'", OneOrMore(Choice(1, "'0'", "'1'", "...", "'9'"))))
+    OneOrMore(NonTerminalLink("digit")),
+    Optional(Sequence("'e'", OneOrMore(NonTerminalLink("digit"))))
 );
 
 const string = Diagram(
@@ -38,11 +40,73 @@ const string = Diagram(
 );
 
 // Grammar
-const array = Diagram(
+
+const decl = Diagram(
+    NonTerminalLink("identifier"),
+    ":=",
+    NonTerminalLink("expr"),
+    ";"
+);
+
+const affect = Diagram(
+    NonTerminalLink("dotted_expr"),
+    "=",
+    NonTerminalLink("expr")
+);
+
+const object_field_init = Diagram(
+    NonTerminalLink("identifier"),
+    "':'",
+    NonTerminalLink("expr")
+);
+
+const msg_sel = Diagram(
+    NonTerminalLink("identifier"),
+    Optional(Sequence(
+        ":",
+        NonTerminalLink("identifier"),
+        ZeroOrMore(Sequence(
+            NonTerminalLink("identifier"),
+            ":",
+            NonTerminalLink("identifier")
+        ))
+    ))
+);
+
+const obj_msg_def = Diagram(
+    NonTerminalLink("msg_sel"),
+    "{",
+    ZeroOrMore(NonTerminalLink("statement")),
+    "}"
+);
+
+const obj_litteral = Diagram(
+    "{",
+    Optional(Sequence(
+        Choice(1,
+            NonTerminalLink("obj_field_init"),
+            NonTerminalLink("obj_msg_def")
+        ),
+        ZeroOrMore(Sequence(
+            ",",
+            Choice(1,
+                NonTerminalLink("obj_field_init"),
+                NonTerminalLink("obj_msg_def")
+            ),
+        )),
+        Optional(",")
+    )),
+    "}"
+);
+
+/////////////////////////////////////////////////////////////////////////
+
+const array_litteral = Diagram(
     "'['",
     Optional(Sequence(
-        NonTerminalLink("expression"),
-        ZeroOrMore(Sequence("','", NonTerminalLink("expression")))
+        NonTerminalLink("expr"),
+        ZeroOrMore(Sequence("','", NonTerminalLink("expr"))),
+        Optional(",")
     )),
     "']'"
 );
@@ -50,19 +114,9 @@ const array = Diagram(
 const object_field_name = Diagram(
     Choice(0,
         NonTerminalLink("identifier"),
-        NonTerminalLink("object_message_name"))
-);
-
-const object_message_name = Diagram(
-    "'#'",
-    NonTerminalLink("identifier"),
-    ZeroOrMore(Sequence("':'", NonTerminalLink("identifier")))
-);
-
-const object_field_init = Diagram(
-    NonTerminalLink("object_field_name"),
-    "':'",
-    NonTerminalLink("expression")
+        Sequence("#", NonTerminalLink("identifier"), 
+            ZeroOrMore(Sequence(":", NonTerminalLink("identifier")))
+        ))
 );
 
 const function_definition = Diagram(
@@ -134,19 +188,17 @@ const atom_expression = Diagram(
 window.onload = () => {
     // Tokens
     letter.addTo(document.getElementById("letter-diagram"));
+    digit.addTo(document.getElementById("digit-diagram"));
     identifier.addTo(document.getElementById("identifier-diagram"));
     integer.addTo(document.getElementById("integer-diagram"));
     double.addTo(document.getElementById("double-diagram"));
     string.addTo(document.getElementById("string-diagram"));
 
     // Grammar
-    array.addTo(document.getElementById("array-diagram"));
-    object_field_name.addTo(document.getElementById("object-field-name-diagram"));
-    object_message_name.addTo(document.getElementById("object-message-name-diagram"));
-    object_field_init.addTo(document.getElementById("object-field-init-diagram"));
-    function_definition.addTo(document.getElementById("function-definition-diagram"));
-    object.addTo(document.getElementById("object-diagram"));
-    block.addTo(document.getElementById("block-diagram"));
-    block_params.addTo(document.getElementById("block-params-diagram"));
-    atom_expression.addTo(document.getElementById("atom-expression-diagram"));
+    decl.addTo(document.getElementById("decl"));
+    affect.addTo(document.getElementById("affect"));
+    object_field_init.addTo(document.getElementById("obj_field_init"));
+    msg_sel.addTo(document.getElementById("msg_sel"));
+    obj_msg_def.addTo(document.getElementById("obj_msg_def"));
+    obj_litteral.addTo(document.getElementById("obj_litteral"));
 };
