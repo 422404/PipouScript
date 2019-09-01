@@ -588,6 +588,7 @@ parse_result_t Parser_ParseStatement(parser_t * parser) {
     error_t * error = NULL;
     loc_t loc;
     bool nothing_to_parse = false;
+    size_t lookahead_index_backup;
 
     node = ASTNode_New(NODE_STATEMENT);
 
@@ -605,7 +606,13 @@ parse_result_t Parser_ParseStatement(parser_t * parser) {
             node->as_statement.value = value.node;
         }
     } else {
-        // try to parse the complex ones first (decl and affect)
+        if (tok) Parser_PushBackTokenList(parser);
+        /* - try to parse the complex ones first (decl and affect)
+         * - save the lookahead index so we can rollback
+         *   --> decl, affect and expr are ambiguous be cause they
+         *       can start by an identifier
+         */
+        lookahead_index_backup = parser->token_lookahead_index;
         value = Parser_ParseDecl(parser);
         if (value.node) {
             node->as_statement.is_return_expr = false;
@@ -615,9 +622,8 @@ parse_result_t Parser_ParseStatement(parser_t * parser) {
         } else if (value.error) {
             error = value.error;
         } else {
-            /*
-            // save the index of the token before so we can rollback 
-            // -> todo into Parser_ParseAffect()
+            // no decl so rollback lookahead index
+            parser->token_lookahead_index = lookahead_index_backup;
             value = Parser_ParseAffect(parser);
             if (value.node) {
                 node->as_statement.is_return_expr = false;
@@ -626,7 +632,9 @@ parse_result_t Parser_ParseStatement(parser_t * parser) {
                 node->as_statement.value = value.node;
             } else if (value.error) {
                 error = value.error;
-            } else {*/
+            } else {
+                // no affect so rollback lookahead index
+                parser->token_lookahead_index = lookahead_index_backup;
                 value = Parser_ParseExpr(parser, NODE_OR_EXPR);
                 if (value.node) {
                     node->as_statement.is_return_expr = true;
@@ -643,7 +651,7 @@ parse_result_t Parser_ParseStatement(parser_t * parser) {
                 } else {
                     nothing_to_parse = true;
                 }
-            //}
+            }
         }
     }
 
@@ -823,8 +831,121 @@ parse_result_t Parser_ParseDottedExpr(parser_t * parser) {
     return res;
 }
 
+/**
+ * Be sure to restore the lookahead index on ANY error
+ */
+parse_result_t Parser_ParseAffect(parser_t * parser) {
+    enum {
+        START,
+        GOT_DOTTED_EXPR,
+        GOT_EQUAL,
+        GOT_EXPR,
+        GOT_SEMICOLON
+    };
+    enum {
+        NONE,
+        NO_DOTTED_EXPR,
+        DOTTED_EXPR_ERROR,
+        NO_EQUAL,
+        NO_EXPR,
+        EXPR_ERROR,
+        NO_SEMICOLON
+    };
+    ast_node_t * node;
+    parse_result_t value;
+    token_t * tok;
+    error_t * error = NULL;
+    int state = START;
+    int error_state = NONE;
+    bool must_loop = true;
+
+    node = ASTNode_New(NODE_AFFECT);
+
+    do {
+        switch (state) {
+            case START:
+                value = Parser_ParseDottedExpr(parser);
+                if (!value.node) {
+                    error_state = value.error ? DOTTED_EXPR_ERROR : NO_DOTTED_EXPR;
+                } else {
+                    node->as_affect.lval = value.node;
+                    state = GOT_DOTTED_EXPR;
+                }
+                break;
+
+            case GOT_DOTTED_EXPR:
+                tok = Parser_NextToken(parser, false, false);
+                if (!tok || tok->type != TOKTYPE_EQUAL) {
+                    error_state = NO_EQUAL;
+                    if (tok) Parser_PushBackTokenList(parser);
+                } else {
+                    state = GOT_EQUAL;
+                }
+                break;
+            
+            case GOT_EQUAL: // from here we know for sure it's an affect
+                value = Parser_ParseExpr(parser, NODE_OR_EXPR);
+                if (!value.node) {
+                    error_state = value.error ? EXPR_ERROR : NO_EXPR;
+                    if (value.error) error = value.error;
+                } else {
+                    node->as_affect.rval = value.node;
+                    state = GOT_EXPR;
+                }
+                break;
+            
+            case GOT_EXPR:
+                tok = Parser_NextToken(parser, false, false);
+                if (!tok || tok->type != TOKTYPE_SEMICOLON) {
+                    error_state = NO_SEMICOLON;
+                    if (tok) Parser_PushBackTokenList(parser);
+                } else {
+                    state = GOT_SEMICOLON;
+                }
+                break;
+            
+            case GOT_SEMICOLON:
+                must_loop = false;
+                break;
+        }
+    } while (must_loop && !error_state);
+
+    if (error_state) {
+        char buf[256];
+        loc_t loc = Parser_CurrentLocation(parser);
+        switch (state) {
+            case START: // if no affect to parse, it's ok
+                break;  // if error while parsing dotted_expr 'error' is already set
+            
+            case GOT_DOTTED_EXPR: // we don't know for sure if it's an affect
+                break;            // so no error
+            
+            case GOT_EQUAL: // with an '=' supplied we assume that's an affect
+                            // so we set 'error' if not already set
+                if (!error) {
+                    snprintf(buf, 256, "Expected an expression after '='");
+                    error = Err_NewWithLocation(buf, loc);
+                }
+                break;
+            
+            case GOT_EXPR:
+                snprintf(buf, 256, "Expected a trailing ';'");
+                error = Err_NewWithLocation(buf, loc);
+                break;
+            
+            case GOT_SEMICOLON: // terminal state, no errors possible
+                break;
+
+        }
+        ASTNode_Free(node);
+        node = NULL;
+    }
+
+    parse_result_t res = {node, error};
+    return res;
+}
+
 /*
-parse_result_t Parser_ParseAffect(parser_t * parser);
 parse_result_t Parser_ParseObjFieldInit(parser_t * parser);
 parse_result_t Parser_ParseObjMsgDef(parser_t * parser);
 parse_result_t Parser_ParseObjLitteral(parser_t * parser);

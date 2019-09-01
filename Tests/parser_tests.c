@@ -38,6 +38,11 @@ static char * test_buf23 = "a[b][c]";
 static char * test_buf24 = "a[b][c].d";
 static char * test_buf25 = "a[b].c[d][e]";
 
+static char * test_buf26 = "a.b = abcd;";
+static char * test_buf27 = "= abcd;";
+static char * test_buf28 = "abcd = efgh";
+static char * test_buf29 = "abcd = ";
+
 // test_buf1
 static ast_node_t expected1[] = {
     {NODE_IDENTIFIER, .as_ident  = {.value = "abcd"        }},
@@ -507,6 +512,53 @@ void Test_ParseDottedExpr(void) {
     Parser_Free(parser);
 }
 
+void Test_ParseAffect(void) {
+    parser_t * parser;
+    parse_result_t node;
+
+    // nominal case
+    parser = Parser_New(test_buf26, strlen(test_buf26), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseAffect(parser);
+    assert_true(node.node != NULL);
+    ASTNode_Free(node.node);
+    Parser_Free(parser);
+
+    // error case: the is a dotted_expr but no '='
+    parser = Parser_New(test_buf1, strlen(test_buf1), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseAffect(parser);
+    assert_true(node.node == NULL);
+    assert_true(node.error == NULL);
+    Parser_Free(parser);
+
+    // error case: no dotted_expr
+    parser = Parser_New(test_buf27, strlen(test_buf27), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseAffect(parser);
+    assert_true(node.node == NULL);
+    assert_true(node.error == NULL);
+    Parser_Free(parser);
+
+    // error case: no trailing semicolon
+    parser = Parser_New(test_buf28, strlen(test_buf28), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseAffect(parser);
+    assert_true(node.node == NULL);
+    assert_true(node.error != NULL);
+    Err_Free(node.error);
+    Parser_Free(parser);
+
+    // error case: no expr
+    parser = Parser_New(test_buf29, strlen(test_buf29), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseAffect(parser);
+    assert_true(node.node == NULL);
+    assert_true(node.error != NULL);
+    Err_Free(node.error);
+    Parser_Free(parser);
+}
+
 /**
  * Runs all the parser tests
  */
@@ -518,4 +570,5 @@ void Test_ParserTests(void) {
     run_test(Test_ParseDecl);
     run_test(Test_ParseArrayAccess);
     run_test(Test_ParseDottedExpr);
+    run_test(Test_ParseAffect);
 }
