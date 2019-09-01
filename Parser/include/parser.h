@@ -87,4 +87,4 @@ parse_result_t Parser_ParseArrayAccess(parser_t * parser);
 parse_result_t Parser_ParseDottedExpr(parser_t * parser);
 parse_result_t Parser_ParseMsgPassExpr(parser_t * parser);
 parse_result_t Parser_ParseExpr(parser_t * parser, ast_node_type_t type);
-parse_result_t Parser_ParseStatement(parser_t * parser);
+parse_result_t Parser_ParseStatement(parser_t * parser, bool module_scope);

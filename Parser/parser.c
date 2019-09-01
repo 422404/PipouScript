@@ -126,7 +126,7 @@ void Parser_Free(parser_t * parser) {
  */
 parse_result_t Parser_CreateAST(parser_t * parser) {
     /// @todo test
-    return Parser_ParseDottedExpr(parser);
+    return Parser_ParseStatement(parser, true);
 }
 
 parse_result_t Parser_ParseIdentifier(parser_t * parser, bool directly) {
@@ -451,21 +451,26 @@ parse_result_t Parser_ParseMsgSel(parser_t * parser) {
  */
 parse_result_t Parser_ParseExpr(parser_t * parser, ast_node_type_t type) {
     ast_node_t * node;
-    parse_result_t ident;
+    parse_result_t expr;
+    error_t * error = NULL;
     
     node = ASTNode_New(type);
-    ident = Parser_ParseIdentifier(parser, false);
-    if (ident.node) {
-        Vec_Append(node->as_expr.values, ident.node);
+    expr = Parser_ParseDottedExpr(parser);
+    if (expr.node) {
+        Vec_Append(node->as_expr.values, expr.node);
     } else {
+        if (expr.error) error = expr.error;
         ASTNode_Free(node);
         node = NULL;
     }
 
-    parse_result_t res = {node, NULL};
+    parse_result_t res = {node, error};
     return res;
 }
 
+/**
+ * Be sure to restore the lookahead index on return val = {NULL, NULL}
+ */
 parse_result_t Parser_ParseDecl(parser_t * parser) {
     enum {
         START,
@@ -514,7 +519,7 @@ parse_result_t Parser_ParseDecl(parser_t * parser) {
                 }
                 break;
             
-            case GOT_COLEQUAL:
+            case GOT_COLEQUAL: // now we are sure it's a decl
                 expr = Parser_ParseExpr(parser, NODE_OR_EXPR);
                 if (!expr.node) {
                     error_state = NO_EXPR;
@@ -548,9 +553,7 @@ parse_result_t Parser_ParseDecl(parser_t * parser) {
             case START: // no decl to parse, it's ok
                 break;
 
-            case GOT_IDENT: // no COLEQUAL has been found
-                snprintf(buf, 256, "Expected a ':=' after identifier \"%s\"", ident.node->as_ident.value);
-                error = Err_NewWithLocation(buf, loc);
+            case GOT_IDENT: // we are not a decl
                 break;
             
             case GOT_COLEQUAL: // no expr has been found
@@ -580,7 +583,7 @@ parse_result_t Parser_ParseDecl(parser_t * parser) {
  * @todo tests
  * @todo iterate over statements when they are not module statement but we are in module mode
  */
-parse_result_t Parser_ParseStatement(parser_t * parser) {
+parse_result_t Parser_ParseStatement(parser_t * parser, bool module_scope) {
     ast_node_t * node;
     parse_result_t value;
     token_t * tok;
@@ -639,11 +642,15 @@ parse_result_t Parser_ParseStatement(parser_t * parser) {
                 if (value.node) {
                     node->as_statement.is_return_expr = true;
                     node->as_statement.is_local_return = true;
+                    node->as_statement.is_mod_statement = false;
                     node->as_statement.value = value.node;
 
                     tok = Parser_NextToken(parser, false, false);
-                    node->as_statement.is_mod_statement = tok && tok->type == TOKTYPE_SEMICOLON;
-                    if (!node->as_statement.is_mod_statement && tok) {
+                    if (tok && tok->type == TOKTYPE_SEMICOLON) {
+                        node->as_statement.is_mod_statement = true;
+                        node->as_statement.is_return_expr = false;
+                        node->as_statement.is_local_return = false;
+                    } else if (tok) {
                         Parser_PushBackTokenList(parser);
                     }
                 } else if (value.error) {
@@ -656,6 +663,12 @@ parse_result_t Parser_ParseStatement(parser_t * parser) {
     }
 
     if (nothing_to_parse || error) {
+        ASTNode_Free(node);
+        node = NULL;
+    } else if (!node->as_statement.is_mod_statement && parser->module_mode && module_scope) {
+        loc = Parser_CurrentLocation(parser);
+        snprintf(buf, 256, "Return statements cannot be used outside of blocks in modules");
+        error = Err_NewWithLocation(buf, loc);
         ASTNode_Free(node);
         node = NULL;
     }
@@ -832,7 +845,7 @@ parse_result_t Parser_ParseDottedExpr(parser_t * parser) {
 }
 
 /**
- * Be sure to restore the lookahead index on ANY error
+ * Be sure to restore the lookahead index on return val = {NULL, NULL}
  */
 parse_result_t Parser_ParseAffect(parser_t * parser) {
     enum {

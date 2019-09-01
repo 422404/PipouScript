@@ -43,6 +43,13 @@ static char * test_buf27 = "= abcd;";
 static char * test_buf28 = "abcd = efgh";
 static char * test_buf29 = "abcd = ";
 
+static char * test_buf30 = "abcd";
+static char * test_buf31 = "abcd;";
+static char * test_buf32 = "^abcd";
+static char * test_buf33 = "^ ";
+static char * test_buf34 = "abcd :=";
+static char * test_buf35 = "a.b.c.d = ";
+
 // test_buf1
 static ast_node_t expected1[] = {
     {NODE_IDENTIFIER, .as_ident  = {.value = "abcd"        }},
@@ -259,6 +266,14 @@ void Test_ParseDecl(void) {
     assert_true(node.node != NULL);
     assert_string_equal("abcd", node.node->as_decl.lval->as_ident.value);
     ASTNode_Free(node.node);
+    Parser_Free(parser);
+
+    // nominal case: that's not a decl
+    parser = Parser_New(test_buf1, strlen(test_buf1), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseDecl(parser);
+    assert_true(node.node == NULL);
+    assert_true(node.error == NULL);
     Parser_Free(parser);
 
     // error case: no expression is supplied
@@ -524,6 +539,14 @@ void Test_ParseAffect(void) {
     ASTNode_Free(node.node);
     Parser_Free(parser);
 
+    // nominal case: that's not an affect
+    parser = Parser_New(test_buf1, strlen(test_buf1), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseAffect(parser);
+    assert_true(node.node == NULL);
+    assert_true(node.error == NULL);
+    Parser_Free(parser);
+
     // error case: the is a dotted_expr but no '='
     parser = Parser_New(test_buf1, strlen(test_buf1), NULL, false);
     assert_true(parser != NULL);
@@ -559,6 +582,86 @@ void Test_ParseAffect(void) {
     Parser_Free(parser);
 }
 
+void Test_ParseStatement(void) {
+    parser_t * parser;
+    parse_result_t node;
+
+    // @todo test_buf1 is error case --> no ':' before message parameter value
+
+    // nominal case
+    parser = Parser_New(test_buf30, strlen(test_buf30), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseStatement(parser, false);
+    assert_true(node.node != NULL);
+    assert_true(node.node->as_statement.is_local_return);
+    assert_false(node.node->as_statement.is_mod_statement);
+    assert_true(node.node->as_statement.is_return_expr);
+    ASTNode_Free(node.node);
+    Parser_Free(parser);
+
+    // error case: cannot return from module
+    parser = Parser_New(test_buf30, strlen(test_buf30), NULL, true);
+    assert_true(parser != NULL);
+    node = Parser_ParseStatement(parser, true);
+    assert_true(node.node == NULL);
+    Err_Free(node.error);
+    Parser_Free(parser);
+
+    // nominal case
+    parser = Parser_New(test_buf31, strlen(test_buf31), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseStatement(parser, false);
+    assert_true(node.node != NULL);
+    assert_false(node.node->as_statement.is_local_return);
+    assert_true(node.node->as_statement.is_mod_statement);
+    assert_false(node.node->as_statement.is_return_expr);
+    ASTNode_Free(node.node);
+    Parser_Free(parser);
+
+    // nominal case
+    parser = Parser_New(test_buf32, strlen(test_buf32), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseStatement(parser, false);
+    assert_true(node.node != NULL);
+    assert_false(node.node->as_statement.is_local_return);
+    assert_false(node.node->as_statement.is_mod_statement);
+    assert_true(node.node->as_statement.is_return_expr);
+    ASTNode_Free(node.node);
+    Parser_Free(parser);
+
+    // error case: cannot return from module
+    parser = Parser_New(test_buf32, strlen(test_buf32), NULL, true);
+    assert_true(parser != NULL);
+    node = Parser_ParseStatement(parser, true);
+    assert_true(node.node == NULL);
+    Err_Free(node.error);
+    Parser_Free(parser);
+
+    // error case: no expr after '^'
+    parser = Parser_New(test_buf33, strlen(test_buf33), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseStatement(parser, false);
+    assert_true(node.node == NULL);
+    Err_Free(node.error);
+    Parser_Free(parser);
+
+    // error case: malformed decl
+    parser = Parser_New(test_buf34, strlen(test_buf34), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseStatement(parser, false);
+    assert_true(node.node == NULL);
+    Err_Free(node.error);
+    Parser_Free(parser);
+
+    // error case: malformed affect
+    parser = Parser_New(test_buf35, strlen(test_buf35), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseStatement(parser, false);
+    assert_true(node.node == NULL);
+    Err_Free(node.error);
+    Parser_Free(parser);
+}
+
 /**
  * Runs all the parser tests
  */
@@ -571,4 +674,5 @@ void Test_ParserTests(void) {
     run_test(Test_ParseArrayAccess);
     run_test(Test_ParseDottedExpr);
     run_test(Test_ParseAffect);
+    run_test(Test_ParseStatement);
 }
