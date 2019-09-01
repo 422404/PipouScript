@@ -50,6 +50,7 @@ static void Eval_PrintTokens(char * buffer, char * filename) {
             char * token_string = Token_ToString(token);
             printf("%s\n", token_string);
             free(token_string);
+            Token_Free(token);
         }
         if (Lex_GetStatus(lexer) == LEX_ERROR) {
             Err_Print(Err_GetError());
@@ -66,18 +67,19 @@ static void Eval_PrintTokens(char * buffer, char * filename) {
  */
 static void Eval_PrintAST(char * buffer, char * filename) {
     parser_t * parser;
-    ast_node_t * ast_root;
+    parse_result_t ast_root;
 
     parser = Parser_New(buffer, strlen(buffer), filename, true);
     ast_root = Parser_CreateAST(parser);
-    if (ast_root) {
-        char * ast_string = ASTNode_ToString(ast_root);
+    if (ast_root.node) {
+        char * ast_string = ASTNode_ToString(ast_root.node);
         printf("\n%s\n", ast_string);
         free(ast_string);
+        ASTNode_Free(ast_root.node);
     } else {
-        Err_Print(Err_GetError());
-        Err_SetError(NULL);
+        Err_Print(ast_root.error);
     }
+    if (ast_root.error) Err_Free(ast_root.error);
     Parser_Free(parser);
 }
 
@@ -90,22 +92,25 @@ int Eval_REPL() {
     char * line;
     size_t tmp = 0;
     ssize_t line_length;
+    bool must_loop = true;
 
     printf("Welcome to PipouScript shell v%s\n", PRINT_VERSION);
-    while(true) {
+    while(must_loop) {
         printf(":> ");
         line_length = Eval_ReadLine(&line, &tmp);
-        if (line_length > 0) {
-            /// @todo only when some flag is set
-            Eval_PrintTokens(line, NULL);
-            Eval_PrintAST(line, NULL);
-            free(line);
-        } else if (line_length == -1) {
-            if (feof(stdin)) return 0;
+        if (line_length == -1) {
+            if (feof(stdin)) must_loop = false;
             else {
                 perror("Error: ");
                 return -1;
             }
+        } else if (line_length > 0) {
+            /// @todo only when some flag is set
+            Eval_PrintTokens(line, NULL);
+            Eval_PrintAST(line, NULL);
         }
+        free(line);
     }
+
+    return 0;
 }
