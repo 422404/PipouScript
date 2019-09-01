@@ -84,86 +84,87 @@ ast_node_t * ASTNode_New(ast_node_type_t type) {
  * @param[int] node The node to free
  */
 void ASTNode_Free(ast_node_t * node) {
-    if (!node) Err_Throw(Err_New("NULL pointer to AST node"));
-    switch (node->type) {
-        case NODE__ROOT_:
-            Vec_ForEach(node->as_root.statements, (void (*)(void *))ASTNode_Free);
-            Vec_Free(node->as_root.statements);
-            break;
-        case NODE_IDENTIFIER:
-            free(node->as_ident.value);
-            break;
-        case NODE_STRING:
-            free(node->as_string.value);
-            break;
-        case NODE_DECL:
-            ASTNode_Free(node->as_decl.lval);
-            ASTNode_Free(node->as_decl.rval);
-            break;
-        case NODE_AFFECT:
-            ASTNode_Free(node->as_affect.lval);
-            ASTNode_Free(node->as_affect.rval);
-            break;
-        case NODE_OBJ_FIELD_NAME:
-            Vec_ForEach(node->as_obj_field_name.components, (void (*)(void *))ASTNode_Free);
-            Vec_Free(node->as_obj_field_name.components);
-            break;
-        case NODE_OBJ_FIELD_INIT:
-            ASTNode_Free(node->as_obj_field_init.ident);
-            ASTNode_Free(node->as_obj_field_init.value);
-            break;
-        case NODE_MSG_SEL:
-            Vec_ForEach(node->as_msg_sel.ident_list, (void (*)(void *))ASTNode_Free);
-            Vec_Free(node->as_msg_sel.ident_list);
-            break;
-        case NODE_OBJ_MSG_DEF:
-            Vec_ForEach(node->as_obj_msg_def.statements, (void (*)(void *))ASTNode_Free);
-            Vec_Free(node->as_obj_msg_def.statements);
-            ASTNode_Free(node->as_obj_msg_def.selector);
-            break;
-        case NODE_OBJ_LITTERAL:
-            Vec_ForEach(node->as_obj_litteral.obj_fields, (void (*)(void *))ASTNode_Free);
-            Vec_Free(node->as_obj_litteral.obj_fields);
-            break;
-        case NODE_ARRAY_LITTERAL:
-            Vec_ForEach(node->as_array_litteral.items, (void (*)(void *))ASTNode_Free);
-            Vec_Free(node->as_array_litteral.items);
-            break;
-        case NODE_BLOCK:
-            Vec_ForEach(node->as_block.params, (void (*)(void *))ASTNode_Free);
-            Vec_Free(node->as_block.params);
-            Vec_ForEach(node->as_block.statements, (void (*)(void *))ASTNode_Free);
-            Vec_Free(node->as_block.statements);
-            break;
-        case NODE_ARRAY_ACCESS:
-            ASTNode_Free(node->as_array_access.index_expr);
-            break;
-        case NODE_DOTTED_EXPR:
-            Vec_ForEach(node->as_dotted_expr.components, (void (*)(void *))ASTNode_Free);
-            Vec_Free(node->as_dotted_expr.components);
-            break;
-        case NODE_MSG_PASS_EXPR:
-            Vec_ForEach(node->as_msg_pass_expr.components, (void (*)(void *))ASTNode_Free);
-            Vec_Free(node->as_msg_pass_expr.components);
-            break;
-        case NODE_OR_EXPR:
-        case NODE_AND_EXPR:
-        case NODE_COMP_EXPR:
-        case NODE_ARITH_EXPR:
-        case NODE_TERM_EXPR:
-        case NODE_FACTOR_EXPR:
-        case NODE_UNARY_EXPR:
-        case NODE_ATOM_EXPR:
-            Vec_ForEach(node->as_expr.values, (void (*)(void *))ASTNode_Free);
-            Vec_Free(node->as_expr.values);
-            break;
-        case NODE_STATEMENT:
-            ASTNode_Free(node->as_statement.value);
-            break;
-        default:
-            break;
+    if (node) {
+        switch (node->type) {
+            case NODE__ROOT_:
+                Vec_ForEach(node->as_root.statements, (void (*)(void *))ASTNode_Free);
+                Vec_Free(node->as_root.statements);
+                break;
+            case NODE_IDENTIFIER:
+                free(node->as_ident.value);
+                break;
+            case NODE_STRING:
+                free(node->as_string.value);
+                break;
+            case NODE_DECL:
+                ASTNode_Free(node->as_decl.lval);
+                ASTNode_Free(node->as_decl.rval);
+                break;
+            case NODE_AFFECT:
+                ASTNode_Free(node->as_affect.lval);
+                ASTNode_Free(node->as_affect.rval);
+                break;
+            case NODE_OBJ_FIELD_NAME:
+                Vec_ForEach(node->as_obj_field_name.components, (void (*)(void *))ASTNode_Free);
+                Vec_Free(node->as_obj_field_name.components);
+                break;
+            case NODE_OBJ_FIELD_INIT:
+                ASTNode_Free(node->as_obj_field_init.ident);
+                ASTNode_Free(node->as_obj_field_init.value);
+                break;
+            case NODE_MSG_SEL:
+                Vec_ForEach(node->as_msg_sel.ident_list, (void (*)(void *))ASTNode_Free);
+                Vec_Free(node->as_msg_sel.ident_list);
+                break;
+            case NODE_OBJ_MSG_DEF:
+                Vec_ForEach(node->as_obj_msg_def.statements, (void (*)(void *))ASTNode_Free);
+                Vec_Free(node->as_obj_msg_def.statements);
+                ASTNode_Free(node->as_obj_msg_def.selector);
+                break;
+            case NODE_OBJ_LITTERAL:
+                Vec_ForEach(node->as_obj_litteral.obj_fields, (void (*)(void *))ASTNode_Free);
+                Vec_Free(node->as_obj_litteral.obj_fields);
+                break;
+            case NODE_ARRAY_LITTERAL:
+                Vec_ForEach(node->as_array_litteral.items, (void (*)(void *))ASTNode_Free);
+                Vec_Free(node->as_array_litteral.items);
+                break;
+            case NODE_BLOCK:
+                Vec_ForEach(node->as_block.params, (void (*)(void *))ASTNode_Free);
+                Vec_Free(node->as_block.params);
+                Vec_ForEach(node->as_block.statements, (void (*)(void *))ASTNode_Free);
+                Vec_Free(node->as_block.statements);
+                break;
+            case NODE_ARRAY_ACCESS:
+                ASTNode_Free(node->as_array_access.index_expr);
+                break;
+            case NODE_DOTTED_EXPR:
+                Vec_ForEach(node->as_dotted_expr.components, (void (*)(void *))ASTNode_Free);
+                Vec_Free(node->as_dotted_expr.components);
+                break;
+            case NODE_MSG_PASS_EXPR:
+                Vec_ForEach(node->as_msg_pass_expr.components, (void (*)(void *))ASTNode_Free);
+                Vec_Free(node->as_msg_pass_expr.components);
+                break;
+            case NODE_OR_EXPR:
+            case NODE_AND_EXPR:
+            case NODE_COMP_EXPR:
+            case NODE_ARITH_EXPR:
+            case NODE_TERM_EXPR:
+            case NODE_FACTOR_EXPR:
+            case NODE_UNARY_EXPR:
+            case NODE_ATOM_EXPR:
+                Vec_ForEach(node->as_expr.values, (void (*)(void *))ASTNode_Free);
+                Vec_Free(node->as_expr.values);
+                break;
+            case NODE_STATEMENT:
+                ASTNode_Free(node->as_statement.value);
+                break;
+            default:
+                break;
+        }
+        free(node);
     }
-    free(node);
 }
 
 /**

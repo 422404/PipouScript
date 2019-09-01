@@ -114,7 +114,7 @@ typedef struct ast_array_access_s {
 } ast_array_access_t;
 
 typedef struct ast_dotted_expr_s {
-    /** vector_t<ast_array_access_t * | ast_obj_field_name_t *> */
+    /** vector_t<ast_array_access_t * | ast_obj_field_name_t * | ast_identifier_t *> */
     vector_t * components;
 } ast_dotted_expr_t;
 
