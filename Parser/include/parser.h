@@ -31,6 +31,14 @@ typedef struct {
     size_t token_lookahead_index;
 } parser_t;
 
+typedef struct {
+    /** The parsed node if success */
+    ast_node_t * node;
+
+    /** The error that occured if any */
+    error_t * error;
+} parse_result_t;
+
 
 /**
  * Allocates a new parser
@@ -54,7 +62,7 @@ void Parser_Free(parser_t * parser);
  * @param[in] parser The parser used to generate the AST
  * @returns          The AST root node
  */
-ast_node_t * Parser_CreateAST(parser_t * parser);
+parse_result_t Parser_CreateAST(parser_t * parser);
 
 /**
  * @todo doc
@@ -62,22 +70,21 @@ ast_node_t * Parser_CreateAST(parser_t * parser);
  * @param     directly Parse directly on the next token without skipping whitespaces
  *                     or comments 
  */
-ast_node_t * Parser_ParseIdentifier(parser_t * parser, bool direct);
-ast_node_t * Parser_ParseString(parser_t * parser);
-ast_node_t * Parser_ParseInt(parser_t * parser);
-ast_node_t * Parser_ParseDouble(parser_t * parser);
-
-ast_node_t * Parser_ParseDecl(parser_t * parser);
-ast_node_t * Parser_ParseAffect(parser_t * parser);
-ast_node_t * Parser_ParseObjFieldInit(parser_t * parser);
-ast_node_t * Parser_ParseMsgSel(parser_t * parser);
-ast_node_t * Parser_ParseObjMsgDef(parser_t * parser);
-ast_node_t * Parser_ParseObjLitteral(parser_t * parser);
-ast_node_t * Parser_ParseObjFieldName(parser_t * parser);
-ast_node_t * Parser_ParseArrayLitteral(parser_t * parser);
-ast_node_t * Parser_ParseBlock(parser_t * parser);
-ast_node_t * Parser_ParseArrayAccess(parser_t * parser);
-ast_node_t * Parser_ParseDottedExpr(parser_t * parser);
-ast_node_t * Parser_ParseMsgPassExpr(parser_t * parser);
-ast_node_t * Parser_ParseExpr(parser_t * parser, ast_node_type_t type);
-ast_node_t * Parser_ParseStatement(parser_t * parser);
+parse_result_t Parser_ParseIdentifier(parser_t * parser, bool direct);
+parse_result_t Parser_ParseString(parser_t * parser);
+parse_result_t Parser_ParseInt(parser_t * parser);
+parse_result_t Parser_ParseDouble(parser_t * parser);
+parse_result_t Parser_ParseDecl(parser_t * parser);
+parse_result_t Parser_ParseAffect(parser_t * parser);
+parse_result_t Parser_ParseObjFieldInit(parser_t * parser);
+parse_result_t Parser_ParseMsgSel(parser_t * parser);
+parse_result_t Parser_ParseObjMsgDef(parser_t * parser);
+parse_result_t Parser_ParseObjLitteral(parser_t * parser);
+parse_result_t Parser_ParseObjFieldName(parser_t * parser);
+parse_result_t Parser_ParseArrayLitteral(parser_t * parser);
+parse_result_t Parser_ParseBlock(parser_t * parser);
+parse_result_t Parser_ParseArrayAccess(parser_t * parser);
+parse_result_t Parser_ParseDottedExpr(parser_t * parser);
+parse_result_t Parser_ParseMsgPassExpr(parser_t * parser);
+parse_result_t Parser_ParseExpr(parser_t * parser, ast_node_type_t type);
+parse_result_t Parser_ParseStatement(parser_t * parser);
