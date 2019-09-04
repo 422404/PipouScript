@@ -35,9 +35,7 @@ msg_pass_expr = atom_expr IDENT [ COLON atom_expr { IDENT COLON atom_expr } ]
 
 expr = or_expr
 
-comp_op = EQEQUAL
-        | NOTEQUAL
-        | GEQUAL
+comp_op = GEQUAL
         | LEQUAL
         | GREATER
         | LOWER
@@ -45,6 +43,8 @@ comp_op = EQEQUAL
 or_expr = and_expr { PIPEPIPE and_expr }
 
 and_expr = comp_expr { AMPAMP comp_expr }
+
+eq_expr = comp_expr [ (EQEQUAL | NOTEQUAL) comp_expr ]
 
 comp_expr = arith_expr [ comp_op arith_expr ]
 
