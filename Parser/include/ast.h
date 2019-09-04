@@ -27,6 +27,7 @@ typedef enum {
     NODE_MSG_PASS_EXPR,
     NODE_OR_EXPR,
     NODE_AND_EXPR,
+    NODE_EQ_EXPR,
     NODE_COMP_EXPR,
     NODE_ARITH_EXPR,
     NODE_TERM_EXPR,
@@ -131,7 +132,7 @@ typedef struct ast_expr_s {
     /** vector_t<ast_expr_t *> */
     vector_t * values;
     /**
-     * arith_expr, comp_expr and unary_expr need more info 
+     * arith_expr, eq_expr, comp_expr and unary_expr need more info 
      * on the operator used
      */
     token_type_t op;

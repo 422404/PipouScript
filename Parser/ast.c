@@ -47,6 +47,7 @@ static void ASTNode_Init(ast_node_t * node) {
             break;
         case NODE_OR_EXPR:
         case NODE_AND_EXPR:
+        case NODE_EQ_EXPR:
         case NODE_COMP_EXPR:
         case NODE_ARITH_EXPR:
         case NODE_TERM_EXPR:
@@ -55,7 +56,15 @@ static void ASTNode_Init(ast_node_t * node) {
         case NODE_ATOM_EXPR:
             node->as_expr.values = Vec_NewWithIncrementLength(1);
             break;
-        default:
+        case NODE_IDENTIFIER:
+        case NODE_STRING:
+        case NODE_INT:
+        case NODE_DOUBLE:
+        case NODE_DECL:
+        case NODE_AFFECT:
+        case NODE_OBJ_FIELD_INIT:
+        case NODE_ARRAY_ACCESS:
+        case NODE_STATEMENT:
             break;
     }
 }
@@ -148,6 +157,7 @@ void ASTNode_Free(ast_node_t * node) {
                 break;
             case NODE_OR_EXPR:
             case NODE_AND_EXPR:
+            case NODE_EQ_EXPR:
             case NODE_COMP_EXPR:
             case NODE_ARITH_EXPR:
             case NODE_TERM_EXPR:
@@ -160,7 +170,8 @@ void ASTNode_Free(ast_node_t * node) {
             case NODE_STATEMENT:
                 ASTNode_Free(node->as_statement.value);
                 break;
-            default:
+            case NODE_INT:
+            case NODE_DOUBLE:
                 break;
         }
         free(node);
@@ -233,6 +244,9 @@ char * ASTNode_ToString(ast_node_t * node) {
             break;
         case NODE_AND_EXPR:
             string =  strdup("ASTAndExprNode { }");
+            break;
+        case NODE_EQ_EXPR:
+            string =  strdup("ASTEqExprNode { }");
             break;
         case NODE_COMP_EXPR:
             string =  strdup("ASTCompExprNode { }");
