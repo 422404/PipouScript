@@ -70,7 +70,7 @@ static void Eval_PrintAST(char * buffer, char * filename) {
     parse_result_t ast_root;
 
     parser = Parser_New(buffer, strlen(buffer), filename, true);
-    ast_root = Parser_CreateAST(parser);
+    ast_root = Parser_CreateAST(parser, false);
     if (ast_root.node) {
         char * ast_string = ASTNode_ToString(ast_root.node);
         printf("\n%s\n", ast_string);

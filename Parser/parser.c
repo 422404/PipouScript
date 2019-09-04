@@ -2,6 +2,7 @@
  * @file parser.c
  * Parser implementation
  */
+#include <assert.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -121,12 +122,13 @@ void Parser_Free(parser_t * parser) {
 
 /**
  * Parse the code and create the raw AST for it
- * @param[in] parser The parser used to generate the AST
+ * @param[in] parser       The parser used to generate the AST
+ * @param     module_scope Whether we parse a module
  * @returns          The AST root node
  */
-parse_result_t Parser_CreateAST(parser_t * parser) {
+parse_result_t Parser_CreateAST(parser_t * parser, bool module_scope) {
     /// @todo test
-    return Parser_ParseStatement(parser, true);
+    return Parser_ParseStatement(parser, module_scope);
 }
 
 parse_result_t Parser_ParseIdentifier(parser_t * parser, bool directly) {
@@ -449,23 +451,140 @@ parse_result_t Parser_ParseMsgSel(parser_t * parser) {
 /**
  * @todo make it parse things other than identifier
  */
-parse_result_t Parser_ParseExpr(parser_t * parser, ast_node_type_t type) {
+parse_result_t Parser_ParseExpr(parser_t * parser) {
+    return  Parser_ParseBinaryExpr(parser, NODE_OR_EXPR);
+}
+
+/**
+ * @param[in] parser
+ * @param     type   NODE_OR_EXPR <= type <= NODE_FACTOR_EXPR
+ */
+parse_result_t Parser_ParseBinaryExpr(parser_t * parser, ast_node_type_t type) {
     ast_node_t * node;
-    parse_result_t expr;
+    parse_result_t value;
     error_t * error = NULL;
-    
+    token_t * tok;
+    ast_node_type_t inf_type = type + 1;
+    bool must_loop = true;
+    bool reset = false;
+    size_t looahead_index;
+
+    assert(NODE_OR_EXPR <= type && type <= NODE_FACTOR_EXPR);
     node = ASTNode_New(type);
-    expr = Parser_ParseDottedExpr(parser);
-    if (expr.node) {
-        Vec_Append(node->as_expr.values, expr.node);
-    } else {
-        if (expr.error) error = expr.error;
+    node->as_expr.op = 0;
+
+    for (size_t i = 0; must_loop && !error; i++) {
+        looahead_index = parser->token_lookahead_index;
+        value = type == NODE_FACTOR_EXPR
+                ? Parser_ParseMsgPassExpr(parser)
+                : (type == NODE_COMP_EXPR
+                        || type == NODE_ARITH_EXPR
+                        || type == NODE_EQ_EXPR) && reset
+                    ? Parser_ParseBinaryExpr(parser, type)
+                    : Parser_ParseBinaryExpr(parser, inf_type);
+        if (!value.node) {
+            must_loop = false;
+            if (error) error = value.error;
+        } else {
+            Vec_Append(node->as_expr.values, value.node);
+            tok = Parser_NextToken(parser, false, false);
+            if (!tok) {
+                must_loop = false;
+            } else {
+                switch (type) {
+                    case NODE_OR_EXPR:
+                        must_loop = tok->type == TOKTYPE_PIPEPIPE;
+                        break;
+                    case NODE_AND_EXPR:
+                        must_loop = tok->type == TOKTYPE_AMPAMP;
+                        break;
+                    case NODE_EQ_EXPR:
+                        must_loop = tok->type == TOKTYPE_EQEQUAL
+                                || tok->type == TOKTYPE_NOTEQUAL;
+                        break;
+                    case NODE_COMP_EXPR:
+                        must_loop = tok->type == TOKTYPE_GEQUAL
+                                || tok->type == TOKTYPE_LEQUAL
+                                || tok->type == TOKTYPE_GREATER
+                                || tok->type == TOKTYPE_LOWER;
+                        break;
+                    case NODE_ARITH_EXPR:
+                        must_loop = tok->type == TOKTYPE_PLUS
+                                || tok->type == TOKTYPE_MINUS;
+                        break;
+                    case NODE_TERM_EXPR:
+                        must_loop = tok->type == TOKTYPE_STAR;
+                        break;
+                    case NODE_FACTOR_EXPR:
+                        must_loop = tok->type == TOKTYPE_SLASH;
+                        break;
+                    default:
+                        break;
+                }
+                /*
+                 * For NODE_EQ_EXPR, NODE_COMP_EXPR and NODE_ARITH_EXPR if 
+                 * the second parsed token is not the same as the precedent
+                 * (it's always the case for the other types) we go back
+                 * before we parsed the last expression and we reparse it
+                 * with the same type this function was given in parameter
+                 * instead of the inf_type
+                 * 
+                 * Exemple:
+                 * a + b - c
+                 *       ^
+                 * The previous expression was parsed as NODE_TERM_EXPR
+                 * The previous parsed token was '+' so we go back in time
+                 * 
+                 * a + b - c
+                 *     ^
+                 * And instead of parsing a NODE_TERM_EXPR we parse a NODE_ARITH_EXPR
+                 * So we have:
+                 *      +
+                 *     / \
+                 *    a   -
+                 *       / \
+                 *      b   c
+                 * 
+                 * If we had a + b + c it would have been:
+                 *      +
+                 *     /|\
+                 *    a b c
+                 */
+                if (must_loop) {
+                    if (i == 0) {
+                        node->as_expr.op = tok->type;
+                    } else if (i > 0 && node->as_expr.op != tok->type) {
+                        reset = true;
+                        parser->token_lookahead_index = looahead_index;
+                        ast_node_t * node2 = Vec_Pop(node->as_expr.values);
+                        ASTNode_Free(node2);
+                    }
+                } else {
+                    Parser_PushBackTokenList(parser);
+                }
+            }
+        }
+    }
+
+    if (error || Vec_GetLength(node->as_expr.values) == 0) {
         ASTNode_Free(node);
         node = NULL;
+    } else if (Vec_GetLength(node->as_expr.values) == 1) {
+        /* 
+         * we shorten the ast tree by skipping nodes that were
+         * the only children of their parent
+         */
+        ast_node_t * node2 = Vec_Pop(node->as_expr.values);
+        ASTNode_Free(node);
+        node = node2;
     }
 
     parse_result_t res = {node, error};
     return res;
+}
+
+parse_result_t Parser_ParseMsgPassExpr(parser_t * parser) {
+    return Parser_ParseDottedExpr(parser);
 }
 
 /**
@@ -520,7 +639,7 @@ parse_result_t Parser_ParseDecl(parser_t * parser) {
                 break;
             
             case GOT_COLEQUAL: // now we are sure it's a decl
-                expr = Parser_ParseExpr(parser, NODE_OR_EXPR);
+                expr = Parser_ParseExpr(parser);
                 if (!expr.node) {
                     error_state = NO_EXPR;
                     error = expr.error;
@@ -600,7 +719,7 @@ parse_result_t Parser_ParseStatement(parser_t * parser, bool module_scope) {
         node->as_statement.is_return_expr = true;
         node->as_statement.is_local_return = false;
         node->as_statement.is_mod_statement = false;
-        value = Parser_ParseExpr(parser, NODE_OR_EXPR);
+        value = Parser_ParseExpr(parser);
         if (!value.node) {
             loc = Parser_CurrentLocation(parser);
             snprintf(buf, 256, "Expected an identifier after '^'");
@@ -638,7 +757,7 @@ parse_result_t Parser_ParseStatement(parser_t * parser, bool module_scope) {
             } else {
                 // no affect so rollback lookahead index
                 parser->token_lookahead_index = lookahead_index_backup;
-                value = Parser_ParseExpr(parser, NODE_OR_EXPR);
+                value = Parser_ParseExpr(parser);
                 if (value.node) {
                     node->as_statement.is_return_expr = true;
                     node->as_statement.is_local_return = true;
@@ -690,7 +809,7 @@ parse_result_t Parser_ParseArrayAccess(parser_t * parser) {
 
     tok = Parser_NextToken(parser, true, true);
     if (tok && tok->type == TOKTYPE_LSBRACKET) {
-        expr = Parser_ParseExpr(parser, NODE_OR_EXPR);
+        expr = Parser_ParseExpr(parser);
         if (!expr.node) {
             if (expr.error) error = expr.error;
             else {
@@ -897,7 +1016,7 @@ parse_result_t Parser_ParseAffect(parser_t * parser) {
                 break;
             
             case GOT_EQUAL: // from here we know for sure it's an affect
-                value = Parser_ParseExpr(parser, NODE_OR_EXPR);
+                value = Parser_ParseExpr(parser);
                 if (!value.node) {
                     error_state = value.error ? EXPR_ERROR : NO_EXPR;
                     if (value.error) error = value.error;
@@ -964,6 +1083,5 @@ parse_result_t Parser_ParseObjMsgDef(parser_t * parser);
 parse_result_t Parser_ParseObjLitteral(parser_t * parser);
 parse_result_t Parser_ParseArrayLitteral(parser_t * parser);
 parse_result_t Parser_ParseBlock(parser_t * parser);
-parse_result_t Parser_ParseMsgPassExpr(parser_t * parser);
-parse_result_t Parser_ParseExpr(parser_t * parser, ast_node_type_t type);
+parse_result_t Parser_ParseUnaryExpr(parser_t * parser);
 */

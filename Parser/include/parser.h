@@ -59,10 +59,11 @@ void Parser_Free(parser_t * parser);
 
 /**
  * Parse the code and create the raw AST for it
- * @param[in] parser The parser used to generate the AST
+ * @param[in] parser       The parser used to generate the AST
+ * @param     module_scope Whether we parse a module
  * @returns          The AST root node
  */
-parse_result_t Parser_CreateAST(parser_t * parser);
+parse_result_t Parser_CreateAST(parser_t * parser, bool module_scope);
 
 /**
  * @todo doc
@@ -86,5 +87,7 @@ parse_result_t Parser_ParseBlock(parser_t * parser);
 parse_result_t Parser_ParseArrayAccess(parser_t * parser);
 parse_result_t Parser_ParseDottedExpr(parser_t * parser);
 parse_result_t Parser_ParseMsgPassExpr(parser_t * parser);
-parse_result_t Parser_ParseExpr(parser_t * parser, ast_node_type_t type);
+parse_result_t Parser_ParseExpr(parser_t * parser);
+parse_result_t Parser_ParseBinaryExpr(parser_t * parser, ast_node_type_t type);
+parse_result_t Parser_ParseUnaryExpr(parser_t * parser);
 parse_result_t Parser_ParseStatement(parser_t * parser, bool module_scope);

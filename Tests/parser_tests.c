@@ -662,6 +662,149 @@ void Test_ParseStatement(void) {
     Parser_Free(parser);
 }
 
+static char * test_buf36 = "a || b";
+static char * test_buf37 = "a || b || c";
+static char * test_buf38 = "a && b";
+static char * test_buf39 = "a && b || c";
+static char * test_buf40 = "a + b + c || d";
+static char * test_buf41 = "a + b - c + d";
+
+void Test_ParseBinaryExpr(void) {
+    parser_t * parser;
+    parse_result_t node;
+    ast_node_t * val;
+
+    // nominal case: simple binary OR
+    parser = Parser_New(test_buf36, strlen(test_buf36), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseBinaryExpr(parser, NODE_OR_EXPR);
+    assert_true(node.node != NULL);
+    assert_int_equal(NODE_OR_EXPR, node.node->type);
+    assert_int_equal(TOKTYPE_PIPEPIPE, node.node->as_expr.op);
+    assert_int_equal(2, Vec_GetLength(node.node->as_expr.values));
+    for (size_t i = 0; i < 2; i++) {
+        val = Vec_GetAt(node.node->as_expr.values, i);
+        assert_int_equal(NODE_DOTTED_EXPR, val->type);
+    }
+    ASTNode_Free(node.node);
+    Parser_Free(parser);
+
+    // nominal case: simple ternary OR
+    parser = Parser_New(test_buf37, strlen(test_buf37), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseBinaryExpr(parser, NODE_OR_EXPR);
+    assert_true(node.node != NULL);
+    assert_int_equal(NODE_OR_EXPR, node.node->type);
+    assert_int_equal(TOKTYPE_PIPEPIPE, node.node->as_expr.op);
+    assert_int_equal(3, Vec_GetLength(node.node->as_expr.values));
+    for (size_t i = 0; i < 3; i++) {
+        val = Vec_GetAt(node.node->as_expr.values, i);
+        assert_int_equal(NODE_DOTTED_EXPR, val->type);
+    }
+    ASTNode_Free(node.node);
+    Parser_Free(parser);
+    
+    // nominal case: simple binary AND
+    parser = Parser_New(test_buf38, strlen(test_buf38), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseBinaryExpr(parser, NODE_OR_EXPR);
+    assert_true(node.node != NULL);
+    assert_int_equal(NODE_AND_EXPR, node.node->type);
+    assert_int_equal(TOKTYPE_AMPAMP, node.node->as_expr.op);
+    assert_int_equal(2, Vec_GetLength(node.node->as_expr.values));
+    for (size_t i = 0; i < 2; i++) {
+        val = Vec_GetAt(node.node->as_expr.values, i);
+        assert_int_equal(NODE_DOTTED_EXPR, val->type);
+    }
+    ASTNode_Free(node.node);
+    Parser_Free(parser);
+
+    // nominal case: binary OR of a binary AND and a dotted_expr
+    parser = Parser_New(test_buf39, strlen(test_buf39), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseBinaryExpr(parser, NODE_OR_EXPR);
+    assert_true(node.node != NULL);
+    assert_int_equal(NODE_OR_EXPR, node.node->type);
+    assert_int_equal(TOKTYPE_PIPEPIPE, node.node->as_expr.op);
+    assert_int_equal(2, Vec_GetLength(node.node->as_expr.values));
+    {
+        ast_node_type_t types[] = {NODE_AND_EXPR, NODE_DOTTED_EXPR};
+        ast_node_t * val2;
+        for (size_t i = 0; i < 2; i++) {
+            val = Vec_GetAt(node.node->as_expr.values, i);
+            assert_int_equal(types[i], val->type);
+            if (val->type == NODE_AND_EXPR) {
+                for (size_t j = 0; j < 2; j++) {
+                    val2 = Vec_GetAt(val->as_expr.values, j);
+                    assert_int_equal(NODE_DOTTED_EXPR, val2->type);
+                }
+            }
+        }
+    }
+    ASTNode_Free(node.node);
+    Parser_Free(parser);
+
+    // nominal case: binary OR of a ternary addition of dotted_exprs and a dotted_expr
+    parser = Parser_New(test_buf40, strlen(test_buf40), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseBinaryExpr(parser, NODE_OR_EXPR);
+    assert_true(node.node != NULL);
+    assert_int_equal(NODE_OR_EXPR, node.node->type);
+    assert_int_equal(TOKTYPE_PIPEPIPE, node.node->as_expr.op);
+    assert_int_equal(2, Vec_GetLength(node.node->as_expr.values));
+    {
+        ast_node_type_t types[] = {NODE_ARITH_EXPR, NODE_DOTTED_EXPR};
+        ast_node_t * val2;
+        for (size_t i = 0; i < 2; i++) {
+            val = Vec_GetAt(node.node->as_expr.values, i);
+            assert_int_equal(types[i], val->type);
+            if (val->type == NODE_ARITH_EXPR) {
+                assert_int_equal(3, Vec_GetLength(val->as_expr.values));
+                for (size_t j = 0; j < 3; j++) {
+                    val2 = Vec_GetAt(val->as_expr.values, j);
+                    assert_int_equal(NODE_DOTTED_EXPR, val2->type);
+                }
+            }
+        }
+    }
+    ASTNode_Free(node.node);
+    Parser_Free(parser);
+
+    // nominal case: addition of a dotted_expr and a substraction of a dotted_expr
+    //               and an addition of two dotted_expr
+    parser = Parser_New(test_buf41, strlen(test_buf41), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseBinaryExpr(parser, NODE_OR_EXPR);
+    assert_true(node.node != NULL);
+    assert_int_equal(NODE_ARITH_EXPR, node.node->type);
+    assert_int_equal(TOKTYPE_PLUS, node.node->as_expr.op);
+    assert_int_equal(2, Vec_GetLength(node.node->as_expr.values));
+    {
+        ast_node_type_t types[] = {NODE_DOTTED_EXPR, NODE_ARITH_EXPR};
+        ast_node_t * val2, * val3;
+        for (size_t i = 0; i < 2; i++) {
+            val = Vec_GetAt(node.node->as_expr.values, i);
+            assert_int_equal(types[i], val->type);
+            if (val->type == NODE_ARITH_EXPR) {
+                assert_int_equal(2, Vec_GetLength(val->as_expr.values));
+                for (size_t j = 0; j < 2; j++) {
+                    val2 = Vec_GetAt(val->as_expr.values, j);
+                    assert_int_equal(types[j], val2->type);
+                    if (val2->type == NODE_ARITH_EXPR) {
+                        assert_int_equal(2, Vec_GetLength(val2->as_expr.values));
+                        for (size_t k = 0; k < 2; k++) {
+                            val3 = Vec_GetAt(val2->as_expr.values, k);
+                            assert_int_equal(NODE_DOTTED_EXPR, val3->type);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    ASTNode_Free(node.node);
+    Parser_Free(parser);
+}
+
 /**
  * Runs all the parser tests
  */
@@ -675,4 +818,5 @@ void Test_ParserTests(void) {
     run_test(Test_ParseDottedExpr);
     run_test(Test_ParseAffect);
     run_test(Test_ParseStatement);
+    run_test(Test_ParseBinaryExpr);
 }
