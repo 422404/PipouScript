@@ -66,6 +66,14 @@ static char * test_buf46 = "(a";
 static char * test_buf47 = "(a)";
 static char * test_buf48 = "!(a + b)";
 
+static char * test_buf49 = "[]";
+static char * test_buf50 = "[1,2]";
+static char * test_buf51 = "[1,2,]";
+static char * test_buf52 = "[";
+static char * test_buf53 = "[1";
+static char * test_buf54 = "[1,";
+static char * test_buf55 = "[,]";
+
 // test_buf1
 static ast_node_t expected1[] = {
     {NODE_IDENTIFIER, .as_ident  = {.value = "abcd"        }},
@@ -960,6 +968,81 @@ void Test_ParseLitteralExpr(void) {
     Parser_Free(parser);
 }
 
+void Test_ParseArrayLitteral(void) {
+    parser_t * parser;
+    parse_result_t node;
+
+    // nominal case: empty array
+    parser = Parser_New(test_buf49, strlen(test_buf49), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseArrayLitteral(parser);
+    assert_true(node.node != NULL);
+    ASTNode_Free(node.node);
+    Parser_Free(parser);
+
+    // nominal case: array with 2 items
+    parser = Parser_New(test_buf50, strlen(test_buf50), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseArrayLitteral(parser);
+    assert_true(node.node != NULL);
+    assert_int_equal(2, Vec_GetLength(node.node->as_array_litteral.items));
+    ASTNode_Free(node.node);
+    Parser_Free(parser);
+
+    // nominal case: array with 2 items and a trailling comma
+    parser = Parser_New(test_buf51, strlen(test_buf51), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseArrayLitteral(parser);
+    assert_true(node.node != NULL);
+    assert_int_equal(2, Vec_GetLength(node.node->as_array_litteral.items));
+    ASTNode_Free(node.node);
+    Parser_Free(parser);
+
+    // error/nominal case: no array_litteral
+    parser = Parser_New(test_buf1, strlen(test_buf1), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseArrayLitteral(parser);
+    assert_true(node.node == NULL);
+    assert_true(node.error == NULL);
+    Parser_Free(parser);
+
+    // error case: only a '['
+    parser = Parser_New(test_buf52, strlen(test_buf52), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseArrayLitteral(parser);
+    assert_true(node.node == NULL);
+    assert_true(node.error != NULL);
+    Err_Free(node.error);
+    Parser_Free(parser);
+
+    // error case: one item and no ']'
+    parser = Parser_New(test_buf53, strlen(test_buf53), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseArrayLitteral(parser);
+    assert_true(node.node == NULL);
+    assert_true(node.error != NULL);
+    Err_Free(node.error);
+    Parser_Free(parser);
+
+    // error case: one item, a trailling comma and no ']'
+    parser = Parser_New(test_buf54, strlen(test_buf54), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseArrayLitteral(parser);
+    assert_true(node.node == NULL);
+    assert_true(node.error != NULL);
+    Err_Free(node.error);
+    Parser_Free(parser);
+
+    // error case: only a comma between the square brackets
+    parser = Parser_New(test_buf55, strlen(test_buf55), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseArrayLitteral(parser);
+    assert_true(node.node == NULL);
+    assert_true(node.error != NULL);
+    Err_Free(node.error);
+    Parser_Free(parser);
+}
+
 /**
  * Runs all the parser tests
  */
@@ -977,4 +1060,5 @@ void Test_ParserTests(void) {
     run_test(Test_ParseUnaryExpr);
     run_test(Test_ParseAtomExpr);
     run_test(Test_ParseLitteralExpr);
+    run_test(Test_ParseArrayLitteral);
 }

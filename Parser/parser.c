@@ -1138,9 +1138,9 @@ parse_result_t Parser_ParseAtomExpr(parser_t * parser) {
                 loc_t loc = Parser_CurrentLocation(parser);
                 error = Err_NewWithLocation("Expected an expression after '('", loc);
             }
+        } else {
+            Parser_PushBackTokenList(parser);
         }
-    } else {
-        Parser_PushBackTokenList(parser);
     }
 
     parse_result_t res = {node, error};
@@ -1151,7 +1151,8 @@ parse_result_t Parser_ParseAtomExpr(parser_t * parser) {
 parse_result_t Parser_ParseLitteralExpr(parser_t * parser) {
     parse_result_t value;
     parse_result_t (*funcs[])(parser_t *) = {
-        Parser_ParseInt, Parser_ParseDouble, Parser_ParseString
+        Parser_ParseInt, Parser_ParseDouble, Parser_ParseString,
+        Parser_ParseArrayLitteral,
     };
 
     for (size_t i = 0; i < 3; i++) {
@@ -1161,10 +1162,110 @@ parse_result_t Parser_ParseLitteralExpr(parser_t * parser) {
     return value;
 }
 
+parse_result_t Parser_ParseArrayLitteral(parser_t * parser) {
+    enum {
+        START,
+        GOT_LSBRACKET,
+        GOT_EXPR,
+        GOT_COMMA,
+        GOT_RSBRACKET
+    };
+    enum {
+        NONE,
+        NO_LSBRACKET,
+        EXPR_ERROR,
+        NO_RSBRACKET
+    };
+    ast_node_t * node;
+    parse_result_t value;
+    token_t * tok;
+    error_t * error = NULL;
+    int state = START;
+    int error_state = NONE;
+    bool must_loop = true;
+
+    node = ASTNode_New(NODE_ARRAY_LITTERAL);
+
+    do {
+        switch (state) {
+            case START:
+                tok = Parser_NextToken(parser, false, false);
+                if (!tok || tok->type != TOKTYPE_LSBRACKET) {
+                    error_state = NO_LSBRACKET;
+                    if (tok) Parser_PushBackTokenList(parser);
+                } else {
+                    state = GOT_LSBRACKET;
+                }
+                break;
+            
+            case GOT_COMMA:
+            case GOT_LSBRACKET:
+                value = Parser_ParseExpr(parser);
+                if (value.node) {
+                    Vec_Append(node->as_array_litteral.items, value.node);
+                    state = GOT_EXPR;
+                } else if (value.error) {
+                    error = value.error;
+                    error_state = EXPR_ERROR;
+                } else {
+                    tok = Parser_NextToken(parser, false, false);
+                    if (!tok || tok->type != TOKTYPE_RSBRACKET) {
+                        error_state = NO_RSBRACKET;
+                        if (tok) Parser_PushBackTokenList(parser);
+                    } else {
+                        state = GOT_RSBRACKET;
+                    }
+                }
+                break;
+            
+            case GOT_EXPR:
+                tok = Parser_NextToken(parser, false, false);
+                if (!tok || (tok->type != TOKTYPE_COMMA
+                        && tok->type != TOKTYPE_RSBRACKET)) {
+                    error_state = NO_RSBRACKET;
+                    if (tok) Parser_PushBackTokenList(parser);
+                } else {
+                    state = tok->type == TOKTYPE_COMMA ? GOT_COMMA : GOT_RSBRACKET;
+                }
+                break;
+            
+            case GOT_RSBRACKET:
+                must_loop = false;
+                break;
+        }
+    } while (must_loop && !error_state);
+
+    if (error_state) {
+        char buf[256];
+        loc_t loc = Parser_CurrentLocation(parser);
+        switch (state) {
+            case START: // no array_litteral to parse, it's ok
+                break;
+            
+            case GOT_EXPR:
+            case GOT_COMMA:
+            case GOT_LSBRACKET: // for error_state == EXPR_ERROR 'error' is already set
+                if (error_state == NO_RSBRACKET) {
+                    snprintf(buf, 256, "Expected a ']' to close the array");
+                    error = Err_NewWithLocation(buf, loc);
+                }
+                break;
+            
+            case GOT_RSBRACKET: // terminal state, no errors possible
+                break;
+            
+        }
+        ASTNode_Free(node);
+        node = NULL;
+    }
+
+    parse_result_t res = {node, error};
+    return res;
+}
+
 /*
 parse_result_t Parser_ParseObjFieldInit(parser_t * parser);
 parse_result_t Parser_ParseObjMsgDef(parser_t * parser);
 parse_result_t Parser_ParseObjLitteral(parser_t * parser);
-parse_result_t Parser_ParseArrayLitteral(parser_t * parser);
 parse_result_t Parser_ParseBlock(parser_t * parser);
 */
