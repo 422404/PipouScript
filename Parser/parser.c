@@ -64,16 +64,12 @@ static void Parser_ConsumeLookahead(parser_t * parser) {
     parser->token_lookahead_index = 0;
 }
 
-/**
- * @todo Test it
- */
 static loc_t Parser_CurrentLocation(parser_t * parser) {
     loc_t loc;
 
     if (parser->token_lookahead_index < Vec_GetLength(parser->token_lookahead)) {
         loc = ((token_t *)Vec_GetAt(parser->token_lookahead, parser->token_lookahead_index))->span.end;
     } else {
-        /// @todo Lex_GetPos()
         loc = parser->lexer->pos;
     }
 
@@ -127,7 +123,7 @@ void Parser_Free(parser_t * parser) {
  * @returns          The AST root node
  */
 parse_result_t Parser_CreateAST(parser_t * parser, bool module_scope) {
-    /// @todo test
+    /// @todo create ast root and parse all statements
     return Parser_ParseStatement(parser, module_scope);
 }
 
@@ -448,9 +444,6 @@ parse_result_t Parser_ParseMsgSel(parser_t * parser) {
     return res;
 }
 
-/**
- * @todo make it parse things other than identifier
- */
 parse_result_t Parser_ParseExpr(parser_t * parser) {
     return  Parser_ParseBinaryExpr(parser, NODE_OR_EXPR);
 }
@@ -584,7 +577,8 @@ parse_result_t Parser_ParseBinaryExpr(parser_t * parser, ast_node_type_t type) {
 }
 
 parse_result_t Parser_ParseMsgPassExpr(parser_t * parser) {
-    return Parser_ParseDottedExpr(parser);
+    /// @todo finish it!
+    return Parser_ParseAtomExpr(parser);
 }
 
 /**
@@ -698,10 +692,6 @@ parse_result_t Parser_ParseDecl(parser_t * parser) {
     return res;
 }
 
-/**
- * @todo tests
- * @todo iterate over statements when they are not module statement but we are in module mode
- */
 parse_result_t Parser_ParseStatement(parser_t * parser, bool module_scope) {
     ast_node_t * node;
     parse_result_t value;
@@ -1077,11 +1067,104 @@ parse_result_t Parser_ParseAffect(parser_t * parser) {
     return res;
 }
 
+parse_result_t Parser_ParseUnaryExpr(parser_t * parser) {
+    ast_node_t * node;
+    parse_result_t value;
+    token_t * tok;
+    error_t * error = NULL;
+    bool nothing_to_parse = false;
+
+    node = ASTNode_New(NODE_UNARY_EXPR);
+    tok = Parser_NextToken(parser, false, false);
+    if (tok) {
+        if (tok->type == TOKTYPE_EXCL
+                || tok->type == TOKTYPE_PLUS
+                || tok->type == TOKTYPE_MINUS) {
+            node->as_expr.op = tok->type;
+            value = Parser_ParseAtomExpr(parser);
+            if (!value.node) {
+                if (value.error) error = value.error;
+                else {
+                    nothing_to_parse = true;
+                }
+            } else {
+                Vec_Append(node->as_expr.values, value.node);
+            }
+        } else {
+            nothing_to_parse = true;
+        }
+    }
+    
+    if (!tok || error || nothing_to_parse) {
+        if (tok) Parser_PushBackTokenList(parser);
+        ASTNode_Free(node);
+        node = NULL;
+    }
+
+    parse_result_t res = {node, error};
+    return res;
+}
+
+parse_result_t Parser_ParseAtomExpr(parser_t * parser) {
+    ast_node_t * node = NULL;
+    parse_result_t value;
+    token_t * tok;
+    error_t * error = NULL;
+    parse_result_t (*funcs[])(parser_t *) = {
+        Parser_ParseDottedExpr, Parser_ParseUnaryExpr, Parser_ParseLitteralExpr
+    };
+
+    for (size_t i = 0; i < 3; i++) {
+        value = funcs[i](parser);
+        if (value.node || value.error) return value;
+    }
+
+    tok = Parser_NextToken(parser, false, false);
+    if (tok) {
+        if (tok->type == TOKTYPE_LPAREN) {
+            value = Parser_ParseExpr(parser);
+            if (value.node) {
+                tok = Parser_NextToken(parser, false, false);
+                if (tok && tok->type == TOKTYPE_RPAREN) {
+                    node = value.node;
+                } else {
+                    loc_t loc = Parser_CurrentLocation(parser);
+                    error = Err_NewWithLocation("Expected a ')' after expression", loc);
+                    ASTNode_Free(value.node);
+                }
+            } else if (value.error) {
+                error = value.error;
+            } else {
+                loc_t loc = Parser_CurrentLocation(parser);
+                error = Err_NewWithLocation("Expected an expression after '('", loc);
+            }
+        }
+    } else {
+        Parser_PushBackTokenList(parser);
+    }
+
+    parse_result_t res = {node, error};
+    return res;
+}
+
+/// @todo parse all litterals
+parse_result_t Parser_ParseLitteralExpr(parser_t * parser) {
+    parse_result_t value;
+    parse_result_t (*funcs[])(parser_t *) = {
+        Parser_ParseInt, Parser_ParseDouble, Parser_ParseString
+    };
+
+    for (size_t i = 0; i < 3; i++) {
+        value = funcs[i](parser);
+        if (value.node || value.error) return value; 
+    }
+    return value;
+}
+
 /*
 parse_result_t Parser_ParseObjFieldInit(parser_t * parser);
 parse_result_t Parser_ParseObjMsgDef(parser_t * parser);
 parse_result_t Parser_ParseObjLitteral(parser_t * parser);
 parse_result_t Parser_ParseArrayLitteral(parser_t * parser);
 parse_result_t Parser_ParseBlock(parser_t * parser);
-parse_result_t Parser_ParseUnaryExpr(parser_t * parser);
 */

@@ -66,7 +66,6 @@ void Parser_Free(parser_t * parser);
 parse_result_t Parser_CreateAST(parser_t * parser, bool module_scope);
 
 /**
- * @todo doc
  * @param[in] parser
  * @param     directly Parse directly on the next token without skipping whitespaces
  *                     or comments 
@@ -91,3 +90,5 @@ parse_result_t Parser_ParseExpr(parser_t * parser);
 parse_result_t Parser_ParseBinaryExpr(parser_t * parser, ast_node_type_t type);
 parse_result_t Parser_ParseUnaryExpr(parser_t * parser);
 parse_result_t Parser_ParseStatement(parser_t * parser, bool module_scope);
+parse_result_t Parser_ParseAtomExpr(parser_t * parser);
+parse_result_t Parser_ParseLitteralExpr(parser_t * parser);

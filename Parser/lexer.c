@@ -98,7 +98,6 @@ static void Lex_IncrementCurrentChar(lexer_t * lexer) {
 
 /**
  * Try to parse an operator that span multiple chars
- * @todo tests
  * @retval True if an operator has been parse
  * @retval False if not
  */
@@ -253,11 +252,7 @@ static token_t * Lex_ParseSimpleToken(lexer_t * lexer) {
             token = Token_New(token_type, token_span, NULL);
         } else {
             lexer->status = LEX_ERROR;
-            char * buf = malloc(100);
-            /// @todo Add filename indication
-            snprintf(buf, 100, "Unrecognized char '%c' (%ld:%ld)", c, lexer->pos.line, lexer->pos.col);
-            Err_SetError(Err_New(buf));
-            free(buf);
+            Err_SetError(Err_NewWithLocation("Unrecognized char '%c'", lexer->pos));
         }
     }
     return token;
@@ -285,8 +280,7 @@ static bool Lex_TryParseString(lexer_t * lexer) {
             fullmatch = true;
         } else {
             lexer->status = LEX_ERROR;
-            /// @todo Add line, col and filename indication
-            Err_SetError(Err_New("String not terminated"));
+            Err_SetError(Err_NewWithLocation("String not terminated", lexer->pos));
         }
     }
     return fullmatch;

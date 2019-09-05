@@ -50,6 +50,22 @@ static char * test_buf33 = "^ ";
 static char * test_buf34 = "abcd :=";
 static char * test_buf35 = "a.b.c.d = ";
 
+static char * test_buf36 = "a || b";
+static char * test_buf37 = "a || b || c";
+static char * test_buf38 = "a && b";
+static char * test_buf39 = "a && b || c";
+static char * test_buf40 = "a + b + c || d";
+static char * test_buf41 = "a + b - c + d";
+
+static char * test_buf42 = "!hello";
+static char * test_buf43 = "!    hello";
+
+static char * test_buf44 = "(a + b)";
+static char * test_buf45 = "(";
+static char * test_buf46 = "(a";
+static char * test_buf47 = "(a)";
+static char * test_buf48 = "!(a + b)";
+
 // test_buf1
 static ast_node_t expected1[] = {
     {NODE_IDENTIFIER, .as_ident  = {.value = "abcd"        }},
@@ -268,7 +284,7 @@ void Test_ParseDecl(void) {
     ASTNode_Free(node.node);
     Parser_Free(parser);
 
-    // nominal case: that's not a decl
+    // error/nominal case: that's not a decl
     parser = Parser_New(test_buf1, strlen(test_buf1), NULL, false);
     assert_true(parser != NULL);
     node = Parser_ParseDecl(parser);
@@ -539,7 +555,7 @@ void Test_ParseAffect(void) {
     ASTNode_Free(node.node);
     Parser_Free(parser);
 
-    // nominal case: that's not an affect
+    // error/nominal case: that's not an affect
     parser = Parser_New(test_buf1, strlen(test_buf1), NULL, false);
     assert_true(parser != NULL);
     node = Parser_ParseAffect(parser);
@@ -661,13 +677,6 @@ void Test_ParseStatement(void) {
     Err_Free(node.error);
     Parser_Free(parser);
 }
-
-static char * test_buf36 = "a || b";
-static char * test_buf37 = "a || b || c";
-static char * test_buf38 = "a && b";
-static char * test_buf39 = "a && b || c";
-static char * test_buf40 = "a + b + c || d";
-static char * test_buf41 = "a + b - c + d";
 
 void Test_ParseBinaryExpr(void) {
     parser_t * parser;
@@ -803,6 +812,152 @@ void Test_ParseBinaryExpr(void) {
     }
     ASTNode_Free(node.node);
     Parser_Free(parser);
+
+    /// @todo test error cases
+}
+
+void Test_ParseUnaryExpr(void) {
+    parser_t * parser;
+    parse_result_t node;
+
+    // nominal case
+    parser = Parser_New(test_buf42, strlen(test_buf42), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseUnaryExpr(parser);
+    assert_true(node.node != NULL);
+    assert_int_equal(TOKTYPE_EXCL, node.node->as_expr.op);
+    ASTNode_Free(node.node);
+    Parser_Free(parser);
+    
+    // nominal case
+    parser = Parser_New(test_buf43, strlen(test_buf43), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseUnaryExpr(parser);
+    assert_true(node.node != NULL);
+    assert_int_equal(TOKTYPE_EXCL, node.node->as_expr.op);
+    ASTNode_Free(node.node);
+    Parser_Free(parser);
+
+    // error/nominal case: no unary_expr to parse
+    parser = Parser_New(test_buf1, strlen(test_buf1), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseUnaryExpr(parser);
+    assert_true(node.node == NULL);
+    assert_true(node.error == NULL);
+    Parser_Free(parser);
+}
+
+void Test_ParseAtomExpr(void) {
+    parser_t * parser;
+    parse_result_t node;
+
+    // nominal case: there is an unary_expr
+    parser = Parser_New(test_buf42, strlen(test_buf42), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseAtomExpr(parser);
+    assert_true(node.node != NULL);
+    assert_int_equal(NODE_UNARY_EXPR, node.node->type);
+    ASTNode_Free(node.node);
+    Parser_Free(parser);
+
+    // nominal case: there is a litteral
+    /// @todo todo!
+
+    // nominal case: there is an arith_expr
+    parser = Parser_New(test_buf44, strlen(test_buf44), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseAtomExpr(parser);
+    assert_true(node.node != NULL);
+    assert_int_equal(NODE_ARITH_EXPR, node.node->type);
+    ASTNode_Free(node.node);
+    Parser_Free(parser);
+
+    // nominal case: there is a dotted_expr
+    parser = Parser_New(test_buf47, strlen(test_buf47), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseAtomExpr(parser);
+    assert_true(node.node != NULL);
+    assert_int_equal(NODE_DOTTED_EXPR, node.node->type);
+    ASTNode_Free(node.node);
+    Parser_Free(parser);
+
+    // nominal case: not operation on a sum
+    parser = Parser_New(test_buf48, strlen(test_buf48), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseAtomExpr(parser);
+    assert_true(node.node != NULL);
+    assert_int_equal(NODE_UNARY_EXPR, node.node->type);
+    ASTNode_Free(node.node);
+    Parser_Free(parser);
+
+    // error case: no dotted_expr after '('
+    parser = Parser_New(test_buf45, strlen(test_buf45), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseAtomExpr(parser);
+    assert_true(node.node == NULL);
+    assert_true(node.error != NULL);
+    Err_Free(node.error);
+    Parser_Free(parser);
+
+    // error case: no ')' after dotted_expr
+    parser = Parser_New(test_buf46, strlen(test_buf46), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseAtomExpr(parser);
+    assert_true(node.node == NULL);
+    assert_true(node.error != NULL);
+    Err_Free(node.error);
+    Parser_Free(parser);
+
+    // error/nominal case: there is nothing to parse
+    parser = Parser_New(" ", strlen(" "), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseAtomExpr(parser);
+    assert_true(node.node == NULL);
+    assert_true(node.error == NULL);
+    Parser_Free(parser);
+}
+
+void Test_ParseLitteralExpr(void) {
+    parser_t * parser;
+    parse_result_t node;
+
+    parser = Parser_New(test_buf1, strlen(test_buf1), NULL, false);
+    assert_true(parser != NULL);
+    // we use it so we can keep using test_buf1 but the test
+    // subject isn't about Parser_ParseIdentifier()
+    node = Parser_ParseIdentifier(parser, false);
+    assert_true(node.node != NULL);
+    ASTNode_Free(node.node);
+
+    // nominal case: string
+    node = Parser_ParseLitteralExpr(parser);
+    assert_true(node.node != NULL);
+    assert_int_equal(expected1[1].type, node.node->type);
+    assert_string_equal(expected1[1].as_string.value, node.node->as_string.value);
+    ASTNode_Free(node.node);
+
+    // nominal case: integer
+    node = Parser_ParseLitteralExpr(parser);
+    assert_true(node.node != NULL);
+    assert_int_equal(expected1[2].type, node.node->type);
+    assert_int_equal(expected1[2].as_int.value, node.node->as_int.value);
+    ASTNode_Free(node.node);
+
+    // nominal case: double
+    node = Parser_ParseLitteralExpr(parser);
+    assert_true(node.node != NULL);
+    assert_int_equal(expected1[3].type, node.node->type);
+    assert_double_equal(expected1[3].as_double.value, node.node->as_double.value, 0.0);
+    ASTNode_Free(node.node);
+    Parser_Free(parser);
+
+    // error/nominal case: nothing to parse
+    parser = Parser_New(" ", strlen(" "), NULL, false);
+    assert_true(node.node != NULL);
+    node = Parser_ParseLitteralExpr(parser);
+    assert_true(node.node == NULL);
+    assert_true(node.error == NULL);
+    Parser_Free(parser);
 }
 
 /**
@@ -819,4 +974,7 @@ void Test_ParserTests(void) {
     run_test(Test_ParseAffect);
     run_test(Test_ParseStatement);
     run_test(Test_ParseBinaryExpr);
+    run_test(Test_ParseUnaryExpr);
+    run_test(Test_ParseAtomExpr);
+    run_test(Test_ParseLitteralExpr);
 }

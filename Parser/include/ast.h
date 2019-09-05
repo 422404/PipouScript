@@ -6,6 +6,7 @@
 #include <stdbool.h>
 #include "vector.h"
 #include "tokens.h"
+#include "str.h"
 
 typedef enum {
     NODE__ROOT_,
@@ -33,7 +34,6 @@ typedef enum {
     NODE_TERM_EXPR,
     NODE_FACTOR_EXPR,
     NODE_UNARY_EXPR,
-    NODE_ATOM_EXPR,
     NODE_STATEMENT
 } ast_node_type_t;
 
@@ -153,7 +153,7 @@ struct ast_node_s {
     // loc_t loc;
     union {
         ast_root_t           as_root;
-        ast_identifier_t     as_ident; ///< @todo rename to as_identifier
+        ast_identifier_t     as_ident;
         ast_string_t         as_string;
         ast_int_t            as_int;
         ast_double_t         as_double;
@@ -192,4 +192,4 @@ void ASTNode_Free(ast_node_t * node);
  * @param[in] node The node to build the string from
  * @returns        The string representation of the node
  */
-char * ASTNode_ToString(ast_node_t * node);
+string * ASTNode_ToString(ast_node_t * node);

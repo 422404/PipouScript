@@ -13,6 +13,7 @@
 #include "lexer.h"
 #include "Parser/include/parser.h"
 #include "ast.h"
+#include "str.h"
 
 #ifdef BUILD_VERSION
 #define PRINT_VERSION BUILD_VERSION
@@ -43,7 +44,6 @@ static void Eval_PrintTokens(char * buffer, char * filename) {
     token_t * token;
 
     lexer = Lex_New(buffer, strlen(buffer), filename);
-    printf("\n");
     while (Lex_GetStatus(lexer) == LEX_OK) {
         token = Lex_NextToken(lexer, false, true);
         if (token) {
@@ -72,14 +72,14 @@ static void Eval_PrintAST(char * buffer, char * filename) {
     parser = Parser_New(buffer, strlen(buffer), filename, true);
     ast_root = Parser_CreateAST(parser, false);
     if (ast_root.node) {
-        char * ast_string = ASTNode_ToString(ast_root.node);
-        printf("\n%s\n", ast_string);
-        free(ast_string);
+        string * ast_string = ASTNode_ToString(ast_root.node);
+        printf("\n%s\n", ast_string->c_str);
+        Str_Free(ast_string);
         ASTNode_Free(ast_root.node);
-    } else {
+    } else if (ast_root.error) {
         Err_Print(ast_root.error);
+        Err_Free(ast_root.error);
     }
-    if (ast_root.error) Err_Free(ast_root.error);
     Parser_Free(parser);
 }
 
