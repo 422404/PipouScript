@@ -56,6 +56,7 @@ factor_expr = msg_pass_expr { SLASH msg_pass_expr }
 
 unary_expr = EXCL atom_expr
            | MINUS atom_expr
+           | PLUS atom_expr
 
 atom_expr = dotted_expr
           | litteral
