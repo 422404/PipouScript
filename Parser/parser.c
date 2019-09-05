@@ -1155,7 +1155,7 @@ parse_result_t Parser_ParseLitteralExpr(parser_t * parser) {
         Parser_ParseArrayLitteral,
     };
 
-    for (size_t i = 0; i < 3; i++) {
+    for (size_t i = 0; i < 4; i++) {
         value = funcs[i](parser);
         if (value.node || value.error) return value; 
     }
