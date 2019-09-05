@@ -46,6 +46,9 @@ tests:
 run-tests:
 	@valgrind --leak-check=yes ./Build/pipou-tests
 
+run-repl:
+	@valgrind --leak-check=yes ./Build/pipou
+
 doc:
 	@doxygen
 
