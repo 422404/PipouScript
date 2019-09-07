@@ -319,7 +319,21 @@ static string * ASTNode_ToStringIndent(ast_node_t * node, size_t indent) {
             str = Str_New("ASTObjLitteralNode { }");
             break;
         case NODE_ARRAY_LITTERAL:
-            str = Str_New("ASTArrayLitteralNode { }");
+            str = Str_New("ASTArrayLitteralNode {\n");
+
+            for (size_t i = 0; i < Vec_GetLength(node->as_array_litteral.items); i++) {
+                str2 = ASTNode_Spaces(indent + 4);
+                APPEND_FREE(str, str2);
+                str2 = ASTNode_ToStringIndent(Vec_GetAt(node->as_array_litteral.items, i), indent + 4);
+                APPEND_FREE(str, str2);
+                str2 = Str_New(i != Vec_GetLength(node->as_array_litteral.items) - 1 ? ",\n" : "\n");
+                APPEND_FREE(str, str2);
+            }
+
+            str2 = ASTNode_Spaces(indent);
+            APPEND_FREE(str, str2);
+            str2 = Str_New("}");
+            APPEND_FREE(str, str2);
             break;
         case NODE_BLOCK:
             str = Str_New("ASTBlockNode { }");
