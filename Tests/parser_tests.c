@@ -74,6 +74,11 @@ static char * test_buf53 = "[1";
 static char * test_buf54 = "[1,";
 static char * test_buf55 = "[,]";
 
+static char * test_buf56 = "abcd a: b";
+static char * test_buf57 = "abcd a";
+static char * test_buf58 = "abcd a: \"wow!\" b: 1337";
+static char * test_buf59 = "abcd a:";
+
 // test_buf1
 static ast_node_t expected1[] = {
     {NODE_IDENTIFIER, .as_ident  = {.value = "abcd"        }},
@@ -1043,6 +1048,18 @@ void Test_ParseArrayLitteral(void) {
     Parser_Free(parser);
 }
 
+void Test_ParseMsgPassExpr(void) {
+    parser_t * parser;
+    parse_result_t node;
+
+    parser = Parser_New(test_buf1, strlen(test_buf1), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseMsgPassExpr(parser);
+    assert_true(node.node != NULL);
+    ASTNode_Free(node.node);
+    Parser_Free(parser);
+}
+
 /**
  * Runs all the parser tests
  */
@@ -1061,4 +1078,5 @@ void Test_ParserTests(void) {
     run_test(Test_ParseAtomExpr);
     run_test(Test_ParseLitteralExpr);
     run_test(Test_ParseArrayLitteral);
+    run_test(Test_ParseMsgPassExpr);
 }

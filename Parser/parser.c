@@ -577,8 +577,154 @@ parse_result_t Parser_ParseBinaryExpr(parser_t * parser, ast_node_type_t type) {
 }
 
 parse_result_t Parser_ParseMsgPassExpr(parser_t * parser) {
-    /// @todo finish it!
-    return Parser_ParseAtomExpr(parser);
+    enum {
+        START,
+        GOT_ATOM_EXPR,
+        GOT_IDENT,
+        GOT_COLON,
+        GOT_ATOM_EXPR2,
+        GOT_IDENT2,
+        GOT_COLON2,
+        GOT_ATOM_EXPR3,
+        GOT_IDENT3
+    };
+    enum {
+        NONE,
+        NO_ATOM_EXPR,
+        NO_IDENT,
+        NO_COLON,
+        ATOM_EXPR_ERROR
+    };
+    ast_node_t * node;
+    parse_result_t value;
+    token_t * tok;
+    error_t * error = NULL;
+    int state = START;
+    int error_state = NONE;
+    bool must_loop = true;
+
+    node = ASTNode_New(NODE_MSG_PASS_EXPR);
+
+    do {
+        switch (state) {
+            case START:
+                value = Parser_ParseAtomExpr(parser);
+                if (value.node) {
+                    state = GOT_ATOM_EXPR;
+                    Vec_Append(node->as_msg_pass_expr.components, value.node);
+                } else {
+                    if (value.error) error = value.error;
+                    error_state = NO_ATOM_EXPR;
+                }
+                break;
+            
+            case GOT_ATOM_EXPR:
+                tok = Parser_NextToken(parser, false, false); /// @todo change to Parser_ParseIdentifier() and save in the vector
+                if (!tok || tok->type != TOKTYPE_IDENT) {
+                    must_loop = false;
+                    if (tok) Parser_PushBackTokenList(parser);
+                } else {
+                    state = GOT_IDENT;
+                }
+                break;
+            
+            case GOT_IDENT:
+                tok = Parser_NextToken(parser, false, false);
+                if (!tok || tok->type != TOKTYPE_COLON) {
+                    must_loop = false;
+                    if (tok) Parser_PushBackTokenList(parser);
+                } else {
+                    state = GOT_COLON;
+                }
+                break;
+            
+            case GOT_COLON:
+                value = Parser_ParseAtomExpr(parser);
+                if (value.node) {
+                    state = GOT_ATOM_EXPR;
+                    Vec_Append(node->as_msg_pass_expr.components, value.node);
+                } else {
+                    if (value.error) {
+                        error = value.error;
+                    }
+                    error_state = NO_ATOM_EXPR;
+                }
+                break;
+            
+            case GOT_ATOM_EXPR2:
+            case GOT_ATOM_EXPR3:
+                tok = Parser_NextToken(parser, false, false);
+                if (!tok || tok->type != TOKTYPE_IDENT) {
+                    must_loop = false;
+                    if (tok) Parser_PushBackTokenList(parser);
+                } else {
+                    state = GOT_IDENT2;
+                }
+                break;
+            
+            case GOT_IDENT2:
+                tok = Parser_NextToken(parser, false, false);
+                if (!tok || tok->type != TOKTYPE_COLON) {
+                    error_state = NO_COLON;
+                    if (tok) Parser_PushBackTokenList(parser);
+                } else {
+                    state = GOT_COLON;
+                }
+                break;
+            
+            case GOT_COLON2:
+                value = Parser_ParseAtomExpr(parser);
+                if (value.node) {
+                    state = GOT_ATOM_EXPR3;
+                    Vec_Append(node->as_msg_pass_expr.components, value.node);
+                } else {
+                    if (value.error) {
+                        error = value.error;
+                    }
+                    error_state = NO_ATOM_EXPR;
+                }
+                break;
+        }
+    } while (must_loop && !error_state);
+
+    if (error_state) {
+        loc_t loc = Parser_CurrentLocation(parser);
+        switch (state) {
+            case START: // 'error' is already set if it needs to
+                break;
+
+            case GOT_ATOM_EXPR: // terminal states
+            case GOT_ATOM_EXPR2:
+            case GOT_ATOM_EXPR3:
+            case GOT_IDENT: // terminal state, no errors
+                break;
+
+            case GOT_COLON:
+            case GOT_COLON2:
+                if (!error) {
+                    error = Err_NewWithLocation("Expected an expression after ':'", loc);
+                }
+                break;
+
+            case GOT_IDENT2:
+            case GOT_IDENT3:
+                error = Err_NewWithLocation("Expected a ':' after the parameter name", loc);
+                break;
+        }
+        ASTNode_Free(node);
+        node = NULL;
+    } else if (Vec_GetLength(node->as_msg_pass_expr.components) == 1) {
+        /* 
+         * we shorten the ast tree by skipping nodes that were
+         * the only children of their parent
+         */
+        ast_node_t * node2 = Vec_Pop(node->as_msg_pass_expr.components);
+        ASTNode_Free(node);
+        node = node2;
+    }
+
+    parse_result_t res = {node, error};
+    return res;
 }
 
 /**
