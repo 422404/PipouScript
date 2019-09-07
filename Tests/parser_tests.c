@@ -1052,11 +1052,43 @@ void Test_ParseMsgPassExpr(void) {
     parser_t * parser;
     parse_result_t node;
 
-    parser = Parser_New(test_buf1, strlen(test_buf1), NULL, false);
+    // nominal case: message with one parameter
+    parser = Parser_New(test_buf56, strlen(test_buf56), NULL, false);
     assert_true(parser != NULL);
     node = Parser_ParseMsgPassExpr(parser);
     assert_true(node.node != NULL);
+    assert_int_equal(NODE_MSG_PASS_EXPR, node.node->type);
+    assert_int_equal(3, Vec_GetLength(node.node->as_msg_pass_expr.components));
     ASTNode_Free(node.node);
+    Parser_Free(parser);
+
+    // nominal case: message with no parameters
+    parser = Parser_New(test_buf57, strlen(test_buf57), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseMsgPassExpr(parser);
+    assert_true(node.node != NULL);
+    assert_int_equal(NODE_MSG_PASS_EXPR, node.node->type);
+    assert_int_equal(2, Vec_GetLength(node.node->as_msg_pass_expr.components));
+    ASTNode_Free(node.node);
+    Parser_Free(parser);
+
+    // nominal case: message with two parameters
+    parser = Parser_New(test_buf58, strlen(test_buf58), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseMsgPassExpr(parser);
+    assert_true(node.node != NULL);
+    assert_int_equal(NODE_MSG_PASS_EXPR, node.node->type);
+    assert_int_equal(5, Vec_GetLength(node.node->as_msg_pass_expr.components));
+    ASTNode_Free(node.node);
+    Parser_Free(parser);
+
+    // error case: value of parameter not supplied
+    parser = Parser_New(test_buf59, strlen(test_buf59), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseMsgPassExpr(parser);
+    assert_true(node.node == NULL);
+    assert_true(node.error != NULL);
+    Err_Free(node.error);
     Parser_Free(parser);
 }
 

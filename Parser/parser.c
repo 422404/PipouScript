@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "Parser/include/parser.h"
-#include "error.h"
+#include "Common/include/error.h"
 #include "lexer.h"
 #include "vector.h"
 #include "misc.h"
@@ -477,7 +477,7 @@ parse_result_t Parser_ParseBinaryExpr(parser_t * parser, ast_node_type_t type) {
                     : Parser_ParseBinaryExpr(parser, inf_type);
         if (!value.node) {
             must_loop = false;
-            if (error) error = value.error;
+            if (value.error) error = value.error;
         } else {
             Vec_Append(node->as_expr.values, value.node);
             tok = Parser_NextToken(parser, false, false);
@@ -619,12 +619,12 @@ parse_result_t Parser_ParseMsgPassExpr(parser_t * parser) {
                 break;
             
             case GOT_ATOM_EXPR:
-                tok = Parser_NextToken(parser, false, false); /// @todo change to Parser_ParseIdentifier() and save in the vector
-                if (!tok || tok->type != TOKTYPE_IDENT) {
-                    must_loop = false;
-                    if (tok) Parser_PushBackTokenList(parser);
-                } else {
+                value = Parser_ParseIdentifier(parser, false);
+                if (value.node) {
+                    Vec_Append(node->as_msg_pass_expr.components, value.node);
                     state = GOT_IDENT;
+                } else {
+                    must_loop = false;
                 }
                 break;
             
@@ -641,7 +641,7 @@ parse_result_t Parser_ParseMsgPassExpr(parser_t * parser) {
             case GOT_COLON:
                 value = Parser_ParseAtomExpr(parser);
                 if (value.node) {
-                    state = GOT_ATOM_EXPR;
+                    state = GOT_ATOM_EXPR2;
                     Vec_Append(node->as_msg_pass_expr.components, value.node);
                 } else {
                     if (value.error) {
@@ -653,12 +653,12 @@ parse_result_t Parser_ParseMsgPassExpr(parser_t * parser) {
             
             case GOT_ATOM_EXPR2:
             case GOT_ATOM_EXPR3:
-                tok = Parser_NextToken(parser, false, false);
-                if (!tok || tok->type != TOKTYPE_IDENT) {
-                    must_loop = false;
-                    if (tok) Parser_PushBackTokenList(parser);
-                } else {
+                value = Parser_ParseIdentifier(parser, false);
+                if (value.node) {
+                    Vec_Append(node->as_msg_pass_expr.components, value.node);
                     state = GOT_IDENT2;
+                } else {
+                    must_loop = false;
                 }
                 break;
             
@@ -668,7 +668,7 @@ parse_result_t Parser_ParseMsgPassExpr(parser_t * parser) {
                     error_state = NO_COLON;
                     if (tok) Parser_PushBackTokenList(parser);
                 } else {
-                    state = GOT_COLON;
+                    state = GOT_COLON2;
                 }
                 break;
             
@@ -1303,7 +1303,7 @@ parse_result_t Parser_ParseLitteralExpr(parser_t * parser) {
 
     for (size_t i = 0; i < 4; i++) {
         value = funcs[i](parser);
-        if (value.node || value.error) return value; 
+        if (value.node || value.error) return value;
     }
     return value;
 }
@@ -1320,7 +1320,8 @@ parse_result_t Parser_ParseArrayLitteral(parser_t * parser) {
         NONE,
         NO_LSBRACKET,
         EXPR_ERROR,
-        NO_RSBRACKET
+        NO_RSBRACKET,
+        GOT_COMMA_BUT_NO_EXPR
     };
     ast_node_t * node;
     parse_result_t value;
@@ -1356,7 +1357,12 @@ parse_result_t Parser_ParseArrayLitteral(parser_t * parser) {
                 } else {
                     tok = Parser_NextToken(parser, false, false);
                     if (!tok || tok->type != TOKTYPE_RSBRACKET) {
-                        error_state = NO_RSBRACKET;
+                        if (Vec_GetLength(node->as_array_litteral.items) == 0
+                                && tok && tok->type == TOKTYPE_COMMA) {
+                            error_state = GOT_COMMA_BUT_NO_EXPR;
+                        } else {
+                            error_state = NO_RSBRACKET;
+                        }
                         if (tok) Parser_PushBackTokenList(parser);
                     } else {
                         state = GOT_RSBRACKET;
@@ -1382,7 +1388,6 @@ parse_result_t Parser_ParseArrayLitteral(parser_t * parser) {
     } while (must_loop && !error_state);
 
     if (error_state) {
-        char buf[256];
         loc_t loc = Parser_CurrentLocation(parser);
         switch (state) {
             case START: // no array_litteral to parse, it's ok
@@ -1392,8 +1397,9 @@ parse_result_t Parser_ParseArrayLitteral(parser_t * parser) {
             case GOT_COMMA:
             case GOT_LSBRACKET: // for error_state == EXPR_ERROR 'error' is already set
                 if (error_state == NO_RSBRACKET) {
-                    snprintf(buf, 256, "Expected a ']' to close the array");
-                    error = Err_NewWithLocation(buf, loc);
+                    error = Err_NewWithLocation("Expected a ']' to close the array", loc);
+                } else if (error_state == GOT_COMMA_BUT_NO_EXPR) {
+                    error = Err_NewWithLocation("Expected at least one expression before a ','", loc);
                 }
                 break;
             
