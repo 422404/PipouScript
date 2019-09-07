@@ -31,7 +31,7 @@ array_access = LSBRACKET expr RSBRACKET
 
 dotted_expr = IDENT { array_access } { DOT obj_field_name { array_access } }
 
-msg_pass_expr = atom_expr IDENT [ COLON atom_expr { IDENT COLON atom_expr } ]
+msg_pass_expr = atom_expr [ IDENT [ COLON atom_expr { IDENT COLON atom_expr } ] ]
 
 expr = or_expr
 
