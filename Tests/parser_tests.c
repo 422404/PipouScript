@@ -78,6 +78,14 @@ static char * test_buf56 = "abcd a: b";
 static char * test_buf57 = "abcd a";
 static char * test_buf58 = "abcd a: \"wow!\" b: 1337";
 static char * test_buf59 = "abcd a:";
+static char * test_buf60 = "abcd a: 1337 b";
+
+static char * test_buf61 = "{ ^abcd }";
+static char * test_buf62 = "{ | abcd | ^abcd }";
+static char * test_buf63 = "{ | abcd efgh | }";
+static char * test_buf64 = "{ | }";
+static char * test_buf65 = "{ | a }";
+static char * test_buf66 = "{ }";
 
 // test_buf1
 static ast_node_t expected1[] = {
@@ -615,8 +623,6 @@ void Test_ParseStatement(void) {
     parser_t * parser;
     parse_result_t node;
 
-    // @todo test_buf1 is error case --> no ':' before message parameter value
-
     // nominal case
     parser = Parser_New(test_buf30, strlen(test_buf30), NULL, false);
     assert_true(parser != NULL);
@@ -994,7 +1000,7 @@ void Test_ParseArrayLitteral(void) {
     ASTNode_Free(node.node);
     Parser_Free(parser);
 
-    // nominal case: array with 2 items and a trailling comma
+    // nominal case: array with 2 items and a trailing comma
     parser = Parser_New(test_buf51, strlen(test_buf51), NULL, false);
     assert_true(parser != NULL);
     node = Parser_ParseArrayLitteral(parser);
@@ -1029,7 +1035,7 @@ void Test_ParseArrayLitteral(void) {
     Err_Free(node.error);
     Parser_Free(parser);
 
-    // error case: one item, a trailling comma and no ']'
+    // error case: one item, a trailing comma and no ']'
     parser = Parser_New(test_buf54, strlen(test_buf54), NULL, false);
     assert_true(parser != NULL);
     node = Parser_ParseArrayLitteral(parser);
@@ -1090,6 +1096,84 @@ void Test_ParseMsgPassExpr(void) {
     assert_true(node.error != NULL);
     Err_Free(node.error);
     Parser_Free(parser);
+
+    // error case: trailing ident
+    parser = Parser_New(test_buf60, strlen(test_buf60), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseMsgPassExpr(parser);
+    assert_true(node.node == NULL);
+    assert_true(node.error != NULL);
+    Err_Free(node.error);
+    Parser_Free(parser);
+}
+
+void Test_ParseBlock(void) {
+    parser_t * parser;
+    parse_result_t node;
+
+    // nominal case: block with return statement
+    parser = Parser_New(test_buf61, strlen(test_buf61), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseBlock(parser);
+    assert_true(node.node != NULL);
+    assert_int_equal(0, Vec_GetLength(node.node->as_block.params));
+    assert_int_equal(1, Vec_GetLength(node.node->as_block.statements));
+    ASTNode_Free(node.node);
+    Parser_Free(parser);
+
+    // nominal case: block with one parameter and return statement
+    parser = Parser_New(test_buf62, strlen(test_buf62), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseBlock(parser);
+    assert_true(node.node != NULL);
+    assert_int_equal(1, Vec_GetLength(node.node->as_block.params));
+    assert_int_equal(1, Vec_GetLength(node.node->as_block.statements));
+    ASTNode_Free(node.node);
+    Parser_Free(parser);
+
+    // nominal case: block with two parameters and no statement
+    parser = Parser_New(test_buf63, strlen(test_buf63), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseBlock(parser);
+    assert_true(node.node != NULL);
+    assert_int_equal(2, Vec_GetLength(node.node->as_block.params));
+    assert_int_equal(0, Vec_GetLength(node.node->as_block.statements));
+    ASTNode_Free(node.node);
+    Parser_Free(parser);
+
+    // error case: block with a '|'
+    parser = Parser_New(test_buf64, strlen(test_buf64), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseBlock(parser);
+    assert_true(node.node == NULL);
+    assert_true(node.error != NULL);
+    Err_Free(node.error);
+    Parser_Free(parser);
+
+    // error case: block with a '|' and a parameter
+    parser = Parser_New(test_buf65, strlen(test_buf65), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseBlock(parser);
+    assert_true(node.node == NULL);
+    assert_true(node.error != NULL);
+    Err_Free(node.error);
+    Parser_Free(parser);
+
+    // error/nominal case: empty curly brackets interpreted as an object, so no result
+    parser = Parser_New(test_buf66, strlen(test_buf66), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseBlock(parser);
+    assert_true(node.node == NULL);
+    assert_true(node.error == NULL);
+    Parser_Free(parser);
+
+    // error/nominal case: no block to parse
+    parser = Parser_New(test_buf1, strlen(test_buf1), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseBlock(parser);
+    assert_true(node.node == NULL);
+    assert_true(node.error == NULL);
+    Parser_Free(parser);
 }
 
 /**
@@ -1111,4 +1195,5 @@ void Test_ParserTests(void) {
     run_test(Test_ParseLitteralExpr);
     run_test(Test_ParseArrayLitteral);
     run_test(Test_ParseMsgPassExpr);
+    run_test(Test_ParseBlock);
 }

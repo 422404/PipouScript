@@ -307,16 +307,16 @@ static string * ASTNode_ToStringIndent(ast_node_t * node, size_t indent) {
             APPEND_FREE(str, str2);
             break;
         case NODE_OBJ_FIELD_INIT:
-            str = Str_New("ASTObjFieldInitNode { }");
+            str = Str_New("ASTObjFieldInitNode { }"); /// @todo finish
             break;
         case NODE_MSG_SEL:
-            str = Str_New("ASTMsgSelNode { }");
+            str = Str_New("ASTMsgSelNode { }"); /// @todo finish
             break;
         case NODE_OBJ_MSG_DEF:
-            str = Str_New("ASTObjMsgDefNode { }");
+            str = Str_New("ASTObjMsgDefNode { }"); /// @todo finish
             break;
         case NODE_OBJ_LITTERAL:
-            str = Str_New("ASTObjLitteralNode { }");
+            str = Str_New("ASTObjLitteralNode { }"); /// @todo finish
             break;
         case NODE_ARRAY_LITTERAL:
             str = Str_New("ASTArrayLitteralNode {\n");
@@ -336,7 +336,40 @@ static string * ASTNode_ToStringIndent(ast_node_t * node, size_t indent) {
             APPEND_FREE(str, str2);
             break;
         case NODE_BLOCK:
-            str = Str_New("ASTBlockNode { }");
+            str = Str_New("ASTBlockNode {\n");
+
+            str2 = ASTNode_Spaces(indent + 4);
+            APPEND_FREE(str, str2);
+            str2 = Str_New("params={\n");
+            APPEND_FREE(str, str2);
+
+            for (size_t i = 0; i < Vec_GetLength(node->as_block.params); i++) {
+                str2 = ASTNode_Spaces(indent + 8);
+                APPEND_FREE(str, str2);
+                str2 = ASTNode_ToStringIndent(Vec_GetAt(node->as_block.params, i), indent + 8);
+                APPEND_FREE(str, str2);
+                str2 = Str_New(i != Vec_GetLength(node->as_block.params) - 1 ? ",\n" : "\n");
+                APPEND_FREE(str, str2);
+            }
+
+            str2 = ASTNode_Spaces(indent + 4);
+            APPEND_FREE(str, str2);
+            str2 = Str_New("},\n");
+            APPEND_FREE(str, str2);
+
+            for (size_t i = 0; i < Vec_GetLength(node->as_block.statements); i++) {
+                str2 = ASTNode_Spaces(indent + 4);
+                APPEND_FREE(str, str2);
+                str2 = ASTNode_ToStringIndent(Vec_GetAt(node->as_block.statements, i), indent + 4);
+                APPEND_FREE(str, str2);
+                str2 = Str_New(i != Vec_GetLength(node->as_block.statements) - 1 ? ",\n" : "\n");
+                APPEND_FREE(str, str2);
+            }
+
+            str2 = ASTNode_Spaces(indent);
+            APPEND_FREE(str, str2);
+            str2 = Str_New("}");
+            APPEND_FREE(str, str2);
             break;
         case NODE_ARRAY_ACCESS:
             str = Str_New("ASTArrayAccessNode {\n");
@@ -611,7 +644,6 @@ static string * ASTNode_ToStringIndent(ast_node_t * node, size_t indent) {
 
 /**
  * Builds the string representation of an AST node
- * @todo finish code
  * @param[in] node The node to build the string from
  * @returns        The string representation of the node
  */

@@ -251,8 +251,10 @@ static token_t * Lex_ParseSimpleToken(lexer_t * lexer) {
             token_span.end   = token_end;
             token = Token_New(token_type, token_span, NULL);
         } else {
+            char buf[256];
             lexer->status = LEX_ERROR;
-            Err_SetError(Err_NewWithLocation("Unrecognized char '%c'", lexer->pos));
+            snprintf(buf, 256, "Unrecognized char '%c'", c);
+            Err_SetError(Err_NewWithLocation(buf, lexer->pos));
         }
     }
     return token;

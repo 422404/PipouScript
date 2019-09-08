@@ -228,7 +228,6 @@ parse_result_t Parser_ParseObjFieldName(parser_t * parser) {
             case START:
                 tok = Parser_NextToken(parser, false, false);
                 if (!tok) {
-                    // error
                     error_state = NO_TOKEN;
                     break;
                 }
@@ -239,7 +238,6 @@ parse_result_t Parser_ParseObjFieldName(parser_t * parser) {
                     Parser_PushBackTokenList(parser);
                     ident = Parser_ParseIdentifier(parser, false);
                     if (!ident.node) {
-                        // error
                         error_state = NO_IDENT;
                         break;
                     }
@@ -256,7 +254,6 @@ parse_result_t Parser_ParseObjFieldName(parser_t * parser) {
             case GOT_COLON:
                 ident = Parser_ParseIdentifier(parser, true);
                 if (!ident.node) {
-                    // error
                     error_state = NO_IDENT;
                     break;
                 }
@@ -1298,10 +1295,10 @@ parse_result_t Parser_ParseLitteralExpr(parser_t * parser) {
     parse_result_t value;
     parse_result_t (*funcs[])(parser_t *) = {
         Parser_ParseInt, Parser_ParseDouble, Parser_ParseString,
-        Parser_ParseArrayLitteral,
+        Parser_ParseArrayLitteral, Parser_ParseBlock
     };
 
-    for (size_t i = 0; i < 4; i++) {
+    for (size_t i = 0; i < 5; i++) {
         value = funcs[i](parser);
         if (value.node || value.error) return value;
     }
@@ -1415,9 +1412,163 @@ parse_result_t Parser_ParseArrayLitteral(parser_t * parser) {
     return res;
 }
 
+parse_result_t Parser_ParseBlock(parser_t * parser) {
+    enum {
+        START,
+        GOT_LCBRACKET,
+        GOT_PIPE,
+        GOT_IDENT,
+        PARSE_STATEMENT,
+        GOT_STATEMENT,
+        GOT_RCBRACKET
+    };
+    enum {
+        NONE,
+        NO_LCBRACKET,
+        NO_IDENT,
+        NO_PIPE,
+        NO_STATEMENT,
+        NO_RCBRACKET
+    };
+    ast_node_t * node;
+    parse_result_t value;
+    token_t * tok;
+    error_t * error = NULL;
+    int state = START;
+    int error_state = NONE;
+    bool must_loop = true;
+    size_t  lookahead_index = parser->token_lookahead_index;
+
+    node = ASTNode_New(NODE_BLOCK);
+
+    do {
+        switch (state) {
+            case START:
+                tok = Parser_NextToken(parser, false, false);
+                if (!tok || tok->type != TOKTYPE_LCBRACKET) {
+                    error_state = NO_LCBRACKET;
+                    if (tok) Parser_PushBackTokenList(parser);
+                } else {
+                    state = GOT_LCBRACKET;
+                }
+                break;
+            
+            case GOT_LCBRACKET:
+                tok = Parser_NextToken(parser, false, false);
+                if (!tok || tok->type != TOKTYPE_PIPE) {
+                    state = PARSE_STATEMENT;
+                    if (tok) Parser_PushBackTokenList(parser);
+                } else {
+                    state = GOT_PIPE;
+                }
+                break;
+            
+            case GOT_PIPE:
+                value = Parser_ParseIdentifier(parser, false);
+                if (value.node) {
+                    Vec_Append(node->as_block.params, value.node);
+                    state = GOT_IDENT;
+                } else {
+                    if (value.error) error = value.error;
+                    error_state = NO_IDENT;
+                }
+                break;
+            
+            case GOT_IDENT:
+                value = Parser_ParseIdentifier(parser, false);
+                if (value.node) {
+                    Vec_Append(node->as_block.params, value.node);
+                    state = GOT_IDENT;
+                } else if (value.error) {
+                    error = value.error;
+                    error_state = NO_IDENT;
+                } else {
+                    tok = Parser_NextToken(parser, false, false);
+                    if (!tok || tok->type != TOKTYPE_PIPE) {
+                        error_state = NO_PIPE;
+                        if (tok) Parser_PushBackTokenList(parser);
+                    } else {
+                        state = GOT_STATEMENT;
+                    }
+                }
+                break;
+            
+            case PARSE_STATEMENT:
+                value = Parser_ParseStatement(parser, false);
+                if (value.node) {
+                    Vec_Append(node->as_block.statements, value.node);
+                    state = GOT_STATEMENT;
+                } else {
+                    if (value.error) error = value.error;
+                    error_state = NO_STATEMENT;
+                }
+                break;
+            
+            case GOT_STATEMENT:
+                value = Parser_ParseStatement(parser, false);
+                if (value.node) {
+                    Vec_Append(node->as_block.statements, value.node);
+                    state = GOT_STATEMENT;
+                } else if (value.error) {
+                    error = value.error;
+                    error_state = NO_STATEMENT;
+                } else {
+                    tok = Parser_NextToken(parser, false, false);
+                    if (!tok || tok->type != TOKTYPE_RCBRACKET) {
+                        error_state = NO_RCBRACKET;
+                        if (tok) Parser_PushBackTokenList(parser);
+                    } else {
+                        state = GOT_RCBRACKET;
+                    }
+                }
+                break;
+            
+            case GOT_RCBRACKET:
+                must_loop = false;
+                break;
+        }
+    } while (must_loop && !error_state);
+
+    if (error_state) {
+        loc_t loc = Parser_CurrentLocation(parser);
+        switch (state) {
+            case START: // terminal state
+            case GOT_LCBRACKET: // no errors
+            case GOT_RCBRACKET: // terminal state
+                break;
+            
+            case GOT_PIPE:
+                if (!error) {
+                    error = Err_NewWithLocation("Expected a block parameter name after '|'", loc);
+                }
+                break;
+            
+            case GOT_IDENT:
+                if (error_state == NO_PIPE) {
+                    error = Err_NewWithLocation("Expected a '|' after block parameters names", loc);
+                }
+                break;
+
+            case PARSE_STATEMENT: // if no statement and no param then it's an object litteral
+                parser->token_lookahead_index = lookahead_index;
+                break;
+            
+            case GOT_STATEMENT:
+                if (!error) {
+                    error = Err_NewWithLocation("Expected a '}' at end of block", loc);
+                }
+                break;
+        }
+        ASTNode_Free(node);
+        node = NULL;
+    }
+
+    parse_result_t res = {node, error};
+    return res;
+}
+
 /*
 parse_result_t Parser_ParseObjFieldInit(parser_t * parser);
 parse_result_t Parser_ParseObjMsgDef(parser_t * parser);
-parse_result_t Parser_ParseObjLitteral(parser_t * parser);
-parse_result_t Parser_ParseBlock(parser_t * parser);
+parse_result_t Parser_ParseObjLitteral(parser_t * parser);ç$*
 */

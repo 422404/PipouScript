@@ -16,9 +16,9 @@ obj_field_name = IDENT
 
 array_litteral = LSBRACKET [ expr { COMMA expr } [ COMMA ] ] RSBRACKET
 
-block_params = IDENT { IDENT } PIPE
+block_params = PIPE IDENT { IDENT } PIPE
 
-block = LCBRACKET [ block_params ] statement { statement } RCBRACKET
+block = LCBRACKET (block_params { statement }) | (statement {statement}) RCBRACKET
 
 litteral = obj_litteral
          | array_litteral
