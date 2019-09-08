@@ -14,6 +14,7 @@
 #include "Parser/include/parser.h"
 #include "ast.h"
 #include "str.h"
+#include "repl.h"
 
 #ifdef BUILD_VERSION
 #define PRINT_VERSION BUILD_VERSION
@@ -93,21 +94,32 @@ int Eval_REPL() {
     size_t tmp = 0;
     ssize_t line_length;
     bool must_loop = true;
+    bool multi_line = false;
 
     printf("Welcome to PipouScript shell v%s\n", PRINT_VERSION);
     while(must_loop) {
-        printf(":> ");
-        line_length = Eval_ReadLine(&line, &tmp);
+        if (!multi_line) {
+            printf(":> ");
+            line_length = Eval_ReadLine(&line, &tmp);
+        } else {
+            line = REPL_ReadMultiLine(&line_length);
+            multi_line = false;
+        }
         if (line_length == -1) {
             if (feof(stdin)) must_loop = false;
             else {
-                perror("Error: ");
+                perror("[REPL] ");
                 return -1;
             }
         } else if (line_length > 0) {
-            /// @todo only when some flag is set
-            Eval_PrintTokens(line, NULL);
-            Eval_PrintAST(line, NULL);
+            repl_cmd_type_t cmd = REPL_IsCommand(line);
+            if (cmd == REPL_CMD_NONE) {
+                /// @todo only when some flag is set
+                Eval_PrintTokens(line, NULL);
+                Eval_PrintAST(line, NULL);
+            } if (cmd == REPL_CMD_MULTILINE) {
+                multi_line = true;
+            }
         }
         free(line);
     }
