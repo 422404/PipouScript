@@ -43,12 +43,17 @@ static ssize_t Eval_ReadLine(char ** line_ptr, size_t * len) {
 static void Eval_PrintTokens(char * buffer, char * filename) {
     lexer_t * lexer;
     token_t * token;
+    bool first_token_printed = false;
 
     lexer = Lex_New(buffer, strlen(buffer), filename);
     while (Lex_GetStatus(lexer) == LEX_OK) {
         token = Lex_NextToken(lexer, false, true);
         if (token) {
             char * token_string = Token_ToString(token);
+            if (!first_token_printed) {
+                printf("\n");
+                first_token_printed = true;
+            }
             printf("%s\n", token_string);
             free(token_string);
             Token_Free(token);

@@ -21,7 +21,8 @@ repl_cmd_type_t REPL_IsCommand(char * line) {
 /**
  * Reads characters until EOF
  * @param[out] read Number of chars read
- * @returns         An allocated buffer containing the read chars
+ * @returns         An allocated buffer containing the possibly read chars
+ *                  (must always be freed)
  */
 char * REPL_ReadMultiLine(ssize_t * read) {
     ssize_t buffer_length = 128;
