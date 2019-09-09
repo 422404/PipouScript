@@ -77,7 +77,6 @@ parse_result_t Parser_ParseDouble(parser_t * parser);
 parse_result_t Parser_ParseDecl(parser_t * parser);
 parse_result_t Parser_ParseAffect(parser_t * parser);
 parse_result_t Parser_ParseObjFieldInit(parser_t * parser);
-parse_result_t Parser_ParseMsgSel(parser_t * parser);
 parse_result_t Parser_ParseObjMsgDef(parser_t * parser);
 parse_result_t Parser_ParseObjLitteral(parser_t * parser);
 parse_result_t Parser_ParseObjFieldName(parser_t * parser);

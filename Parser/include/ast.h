@@ -18,7 +18,6 @@ typedef enum {
     NODE_AFFECT,
     NODE_OBJ_FIELD_NAME,
     NODE_OBJ_FIELD_INIT,
-    NODE_MSG_SEL,
     NODE_OBJ_MSG_DEF,
     NODE_OBJ_LITTERAL,
     NODE_ARRAY_LITTERAL,
@@ -76,13 +75,9 @@ typedef struct ast_obj_field_init_s {
     ast_node_t * value;
 } ast_obj_field_init_t;
 
-typedef struct ast_msg_sel_s {
-    /** vector_t<ast_identifier_t *> */
-    vector_t * ident_list;
-} ast_msg_sel_t;
-
 typedef struct ast_obj_msg_def_s {
-    ast_node_t * selector;
+    /** vector_t<ast_identifier_t *> */
+    vector_t * selector;
     /** vector_t<ast_statement *> */
     vector_t * statements;
 } ast_obj_msg_def_t;
@@ -160,7 +155,6 @@ struct ast_node_s {
         ast_decl_t           as_decl;
         ast_affect_t         as_affect;
         ast_obj_field_init_t as_obj_field_init;
-        ast_msg_sel_t        as_msg_sel;
         ast_obj_msg_def_t    as_obj_msg_def;
         ast_obj_litteral_t   as_obj_litteral;
         ast_obj_field_name_t as_obj_field_name;

@@ -24,11 +24,9 @@ static void ASTNode_Init(ast_node_t * node) {
         case NODE_OBJ_FIELD_NAME:
             node->as_obj_field_name.components = Vec_NewWithIncrementLength(1);
             break;
-        case NODE_MSG_SEL:
-            node->as_msg_sel.ident_list = Vec_NewWithIncrementLength(4);
-            break;
         case NODE_OBJ_MSG_DEF:
             node->as_obj_msg_def.statements = Vec_NewWithIncrementLength(20);
+            node->as_obj_msg_def.selector = Vec_NewWithIncrementLength(2);
             break;
         case NODE_OBJ_LITTERAL:
             node->as_obj_litteral.obj_fields = Vec_NewWithIncrementLength(15);
@@ -121,14 +119,11 @@ void ASTNode_Free(ast_node_t * node) {
                 ASTNode_Free(node->as_obj_field_init.ident);
                 ASTNode_Free(node->as_obj_field_init.value);
                 break;
-            case NODE_MSG_SEL:
-                Vec_ForEach(node->as_msg_sel.ident_list, (void (*)(void *))ASTNode_Free);
-                Vec_Free(node->as_msg_sel.ident_list);
-                break;
             case NODE_OBJ_MSG_DEF:
                 Vec_ForEach(node->as_obj_msg_def.statements, (void (*)(void *))ASTNode_Free);
+                Vec_ForEach(node->as_obj_msg_def.selector, (void (*)(void *))ASTNode_Free);
                 Vec_Free(node->as_obj_msg_def.statements);
-                ASTNode_Free(node->as_obj_msg_def.selector);
+                Vec_Free(node->as_obj_msg_def.selector);
                 break;
             case NODE_OBJ_LITTERAL:
                 Vec_ForEach(node->as_obj_litteral.obj_fields, (void (*)(void *))ASTNode_Free);
@@ -308,9 +303,6 @@ static string * ASTNode_ToStringIndent(ast_node_t * node, size_t indent) {
             break;
         case NODE_OBJ_FIELD_INIT:
             str = Str_New("ASTObjFieldInitNode { }"); /// @todo finish
-            break;
-        case NODE_MSG_SEL:
-            str = Str_New("ASTMsgSelNode { }"); /// @todo finish
             break;
         case NODE_OBJ_MSG_DEF:
             str = Str_New("ASTObjMsgDefNode { }"); /// @todo finish
