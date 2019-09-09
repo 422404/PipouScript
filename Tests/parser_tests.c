@@ -12,10 +12,10 @@ static char * test_buf1 = "abcd \"hello world!\" 1337 3.14159265";
 static char * test_buf2 = "#abcd";
 static char * test_buf3 = "#a:b:c:d";
 
-static char * test_buf4 = "a: b";
-static char * test_buf5 = "a:b c: d e: f";
+static char * test_buf4 = "a: b + c";
+static char * test_buf5 = "a: 1337";
 static char * test_buf6 = "a:";
-static char * test_buf7 = "a: b c";
+static char * test_buf7 = "a";
 
 static char * test_buf8 = "abcd := bcde;";
 static char * test_buf9 = "abcd := ;";
@@ -86,6 +86,16 @@ static char * test_buf63 = "{ | abcd efgh | }";
 static char * test_buf64 = "{ | }";
 static char * test_buf65 = "{ | a }";
 static char * test_buf66 = "{ }";
+
+static char * test_buf67 = "a{}";
+static char * test_buf68 = "a: b {}";
+static char * test_buf69 = "a: b c: d {}";
+static char * test_buf70 = "a: b c: d {\n^b + d\n}";
+static char * test_buf71 = "a: b";
+static char * test_buf72 = "a: b:";
+static char * test_buf73 = "a: b c:";
+static char * test_buf74 = "a: b c: d";
+static char * test_buf75 = "a: b c: d {";
 
 // test_buf1
 static ast_node_t expected1[] = {
@@ -218,75 +228,6 @@ void Test_ParseObjFieldName(void) {
     parser = Parser_New("#a:b:", 5, NULL, false);
     assert_true(parser != NULL);
     node = Parser_ParseObjFieldName(parser);
-    assert_true(node.node == NULL);
-    Err_Free(node.error);
-    Parser_Free(parser);
-}
-
-void Test_ParseMsgSel(void) {
-    parse_result_t node;
-    parser_t * parser;
-
-    // nominal case: message selector composed of only one identifier
-    parser = Parser_New(test_buf1, strlen(test_buf1), NULL, false);
-    assert_true(parser != NULL);
-    node = Parser_ParseMsgSel(parser);
-    assert_true(node.node != NULL);
-    assert_int_equal(1, Vec_GetLength(node.node->as_msg_sel.ident_list));
-    {
-        ast_node_t * ident;
-        ident = Vec_GetAt(node.node->as_msg_sel.ident_list, 0);
-        assert_string_equal("abcd", ident->as_ident.value);
-    }
-    ASTNode_Free(node.node);
-    Parser_Free(parser);
-
-    // nominal case: message selector composed of one parameter
-    parser = Parser_New(test_buf4, strlen(test_buf4), NULL, false);
-    assert_true(parser != NULL);
-    node = Parser_ParseMsgSel(parser);
-    assert_true(node.node != NULL);
-    assert_int_equal(2, Vec_GetLength(node.node->as_msg_sel.ident_list));
-    {
-        ast_node_t * ident;
-        char * names[] = {"a", "b"};
-        for (size_t i = 0; i < 2; i++) {
-            ident = Vec_GetAt(node.node->as_msg_sel.ident_list, i);
-            assert_string_equal(names[i], ident->as_ident.value);
-        }
-    }
-    ASTNode_Free(node.node);
-    Parser_Free(parser);
-
-    // nominal case: message selector with 3 parameters
-    parser = Parser_New(test_buf5, strlen(test_buf5), NULL, false);
-    assert_true(parser != NULL);
-    node = Parser_ParseMsgSel(parser);
-    assert_true(node.node != NULL);
-    assert_int_equal(6, Vec_GetLength(node.node->as_msg_sel.ident_list));
-    {
-        ast_node_t * ident;
-        char * names[] = {"a", "b", "c", "d", "e", "f"};
-        for (size_t i = 0; i < 6; i++) {
-            ident = Vec_GetAt(node.node->as_msg_sel.ident_list, i);
-            assert_string_equal(names[i], ident->as_ident.value);
-        }
-    }
-    ASTNode_Free(node.node);
-    Parser_Free(parser);
-
-    // error case: no identifier supplied after a ':'
-    parser = Parser_New(test_buf6, strlen(test_buf6), NULL, false);
-    assert_true(parser != NULL);
-    node = Parser_ParseMsgSel(parser);
-    assert_true(node.node == NULL);
-    Err_Free(node.error);
-    Parser_Free(parser);
-
-    // error case: no ':' supplied after a new parameter name
-    parser = Parser_New(test_buf7, strlen(test_buf7), NULL, false);
-    assert_true(parser != NULL);
-    node = Parser_ParseMsgSel(parser);
     assert_true(node.node == NULL);
     Err_Free(node.error);
     Parser_Free(parser);
@@ -1176,6 +1117,142 @@ void Test_ParseBlock(void) {
     Parser_Free(parser);
 }
 
+void Test_ParseObjMsgDef(void) {
+    parser_t * parser;
+    parse_result_t node;
+
+    // nominal case: a message with no params or statements
+    parser= Parser_New(test_buf67, strlen(test_buf67), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseObjMsgDef(parser);
+    assert_true(node.node != NULL);
+    assert_int_equal(1, Vec_GetLength(node.node->as_obj_msg_def.selector));
+    assert_int_equal(0, Vec_GetLength(node.node->as_obj_msg_def.statements));
+    ASTNode_Free(node.node);
+    Parser_Free(parser);
+
+    // nominal case: a message with one param and no statements
+    parser= Parser_New(test_buf68, strlen(test_buf68), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseObjMsgDef(parser);
+    assert_true(node.node != NULL);
+    assert_int_equal(2, Vec_GetLength(node.node->as_obj_msg_def.selector));
+    assert_int_equal(0, Vec_GetLength(node.node->as_obj_msg_def.statements));
+    ASTNode_Free(node.node);
+    Parser_Free(parser);
+
+    // nominal case: a message with two param and no statements
+    parser= Parser_New(test_buf69, strlen(test_buf69), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseObjMsgDef(parser);
+    assert_true(node.node != NULL);
+    assert_int_equal(4, Vec_GetLength(node.node->as_obj_msg_def.selector));
+    assert_int_equal(0, Vec_GetLength(node.node->as_obj_msg_def.statements));
+    ASTNode_Free(node.node);
+    Parser_Free(parser);
+
+    // nominal case: a message with two param and one statement
+    parser= Parser_New(test_buf70, strlen(test_buf70), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseObjMsgDef(parser);
+    assert_true(node.node != NULL);
+    assert_int_equal(4, Vec_GetLength(node.node->as_obj_msg_def.selector));
+    assert_int_equal(1, Vec_GetLength(node.node->as_obj_msg_def.statements));
+    ASTNode_Free(node.node);
+    Parser_Free(parser);
+
+    // error case: an ident but no '{' or ':'
+    parser= Parser_New(test_buf1, strlen(test_buf1), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseObjMsgDef(parser);
+    assert_true(node.node == NULL);
+    assert_true(node.error != NULL);
+    Err_Free(node.error);
+    Parser_Free(parser);
+
+    // error/nominal case: not an obj_msg_def but maybe an obj_field_init
+    parser= Parser_New(test_buf71, strlen(test_buf71), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseObjMsgDef(parser);
+    assert_true(node.node == NULL);
+    assert_true(node.error == NULL);
+    Parser_Free(parser);
+
+    // error case: ':' istead of '{' after parameter name, so like previous test
+    parser= Parser_New(test_buf72, strlen(test_buf72), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseObjMsgDef(parser);
+    assert_true(node.node == NULL);
+    assert_true(node.error == NULL);
+    Parser_Free(parser);
+
+    // error case: no name for the second param
+    parser= Parser_New(test_buf73, strlen(test_buf73), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseObjMsgDef(parser);
+    assert_true(node.node == NULL);
+    assert_true(node.error != NULL);
+    Err_Free(node.error);
+    Parser_Free(parser);
+
+    // error case: no '{' after message signature
+    parser= Parser_New(test_buf74, strlen(test_buf74), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseObjMsgDef(parser);
+    assert_true(node.node == NULL);
+    assert_true(node.error != NULL);
+    Err_Free(node.error);
+    Parser_Free(parser);
+
+    // error case: no '}' after statements
+    parser= Parser_New(test_buf75, strlen(test_buf75), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseObjMsgDef(parser);
+    assert_true(node.node == NULL);
+    assert_true(node.error != NULL);
+    Err_Free(node.error);
+    Parser_Free(parser);
+}
+
+void Test_ParseObjFieldInit(void) {
+    parser_t * parser;
+    parse_result_t node;
+
+    // nominal case
+    parser = Parser_New(test_buf4, strlen(test_buf4), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseObjFieldInit(parser);
+    assert_true(node.node != NULL);
+    ASTNode_Free(node.node);
+    Parser_Free(parser);
+
+    // nominal case 2
+    parser = Parser_New(test_buf5, strlen(test_buf5), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseObjFieldInit(parser);
+    assert_true(node.node != NULL);
+    ASTNode_Free(node.node);
+    Parser_Free(parser);
+
+    // error case: no expr after ':'
+    parser = Parser_New(test_buf6, strlen(test_buf6), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseObjFieldInit(parser);
+    assert_true(node.node == NULL);
+    assert_true(node.error != NULL);
+    Err_Free(node.error);
+    Parser_Free(parser);
+
+    // error case: no ':' after ident
+    parser = Parser_New(test_buf7, strlen(test_buf7), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseObjFieldInit(parser);
+    assert_true(node.node == NULL);
+    assert_true(node.error != NULL);
+    Err_Free(node.error);
+    Parser_Free(parser);
+}
+
 /**
  * Runs all the parser tests
  */
@@ -1183,7 +1260,6 @@ void Test_ParserTests(void) {
     run_test(Test_ParseSimpleLitterals);
     run_test(Test_PushBackTokenList);
     run_test(Test_ParseObjFieldName);
-    run_test(Test_ParseMsgSel);
     run_test(Test_ParseDecl);
     run_test(Test_ParseArrayAccess);
     run_test(Test_ParseDottedExpr);
@@ -1196,4 +1272,6 @@ void Test_ParserTests(void) {
     run_test(Test_ParseArrayLitteral);
     run_test(Test_ParseMsgPassExpr);
     run_test(Test_ParseBlock);
+    run_test(Test_ParseObjMsgDef);
+    run_test(Test_ParseObjFieldInit);
 }

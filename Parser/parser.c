@@ -305,142 +305,6 @@ parse_result_t Parser_ParseObjFieldName(parser_t * parser) {
     return res;
 }
 
-parse_result_t Parser_ParseMsgSel(parser_t * parser) {
-    enum {
-        START,
-        GOT_IDENT,
-        GOT_COLON,
-        GOT_IDENT2,
-        GOT_IDENT3,
-        GOT_COLON2,
-        GOT_IDENT4
-    };
-    enum {
-        NONE,
-        NO_IDENT,
-        NO_COLON
-    };
-    ast_node_t * node;
-    parse_result_t ident;
-    token_t * tok;
-    error_t * error = NULL;
-    int state = START;
-    int error_state = NONE;
-    bool must_loop = true;
-
-    node = ASTNode_New(NODE_MSG_SEL);
-
-    /** @todo eliminate code repetition */
-    do {
-        switch (state) {
-            case START:
-                ident = Parser_ParseIdentifier(parser, false);
-                if (!ident.node) {
-                    error_state = NO_IDENT;
-                    break;
-                }
-                Vec_Append(node->as_msg_sel.ident_list, ident.node);
-                state = GOT_IDENT;
-                break;
-            
-            case GOT_IDENT:
-                tok = Parser_NextToken(parser, true, true);
-                if (!tok || tok->type != TOKTYPE_COLON) {
-                    // the message selector is only composed of a name
-                    must_loop = false;
-                    if (tok) Parser_PushBackTokenList(parser);
-                } else if (tok->type == TOKTYPE_COLON) {
-                    state = GOT_COLON;
-                }
-                break;
-            
-            case GOT_COLON:
-                ident = Parser_ParseIdentifier(parser, false);
-                if (!ident.node) {
-                    error_state = NO_IDENT;
-                    break;
-                }
-                Vec_Append(node->as_msg_sel.ident_list, ident.node);
-                state = GOT_IDENT2;
-                break;
-            
-            case GOT_IDENT2:
-                ident = Parser_ParseIdentifier(parser, false);
-                if (!ident.node) {
-                    // the message has one parameter
-                    must_loop = false;
-                    break;
-                }
-                Vec_Append(node->as_msg_sel.ident_list, ident.node);
-                state = GOT_IDENT3;
-                break;
-            
-            case GOT_IDENT3:
-                tok = Parser_NextToken(parser, true, true);
-                if (!tok || tok->type != TOKTYPE_COLON) {
-                    // error
-                    error_state = NO_COLON;
-                    if (tok) Parser_PushBackTokenList(parser);
-                } else if (tok->type == TOKTYPE_COLON) {
-                    state = GOT_COLON2;
-                }
-                break;
-            
-            case GOT_COLON2:
-                ident = Parser_ParseIdentifier(parser, false);
-                if (!ident.node) {
-                    error_state = NO_IDENT;
-                    break;
-                }
-                Vec_Append(node->as_msg_sel.ident_list, ident.node);
-                state = GOT_IDENT4;
-                break;
-            
-            case GOT_IDENT4:
-                ident = Parser_ParseIdentifier(parser, false);
-                if (!ident.node) {
-                    // the message has no more parameters
-                    must_loop = false;
-                    break;
-                }
-                Vec_Append(node->as_msg_sel.ident_list, ident.node);
-                state = GOT_IDENT3;
-                break;
-        }
-    } while (must_loop && !error_state);
-
-    if (error_state) {
-        char buf[256];
-        loc_t loc = Parser_CurrentLocation(parser);
-        switch (state) {
-            case START: // no message selector can be parsed, it's ok
-                break;
-            
-            case GOT_COLON:
-            case GOT_COLON2:
-                snprintf(buf, 256, "Expected another parameter name after ':'");
-                error = Err_NewWithLocation(buf, loc);
-                break;
-            
-            case GOT_IDENT3:
-                snprintf(buf, 256, "Expected a ':' after identifier \"%s\"", ident.node->as_ident.value);
-                error = Err_NewWithLocation(buf, loc);
-                break;
-            
-            // terminal states, no errors possible
-            case GOT_IDENT:
-            case GOT_IDENT2:
-            case GOT_IDENT4:
-                break;
-        }
-        ASTNode_Free(node);
-        node = NULL;
-    }
-
-    parse_result_t res = {node, error};
-    return res;
-}
-
 parse_result_t Parser_ParseExpr(parser_t * parser) {
     return  Parser_ParseBinaryExpr(parser, NODE_OR_EXPR);
 }
@@ -1567,8 +1431,288 @@ parse_result_t Parser_ParseBlock(parser_t * parser) {
     return res;
 }
 
-/*
-parse_result_t Parser_ParseObjFieldInit(parser_t * parser);
-parse_result_t Parser_ParseObjMsgDef(parser_t * parser);
-parse_result_t Parser_ParseObjLitteral(parser_t * parser);ç$*
-*/
+/**
+ * @returns {NULL, NULL} when nothing to parse or when suspecting the presence
+ *          of an obj_field_init
+ */
+parse_result_t Parser_ParseObjMsgDef(parser_t * parser) {
+    enum {
+        START,
+        GOT_IDENT,
+        GOT_COLON,
+        GOT_IDENT2,
+        GOT_IDENT3,
+        GOT_COLON2,
+        GOT_IDENT4,
+        GOT_LCBRACKET,
+        GOT_STATEMENT,
+        GOT_RCBRACKET
+    };
+    enum {
+        NONE,
+        NO_IDENT,
+        NO_COLON_OR_BRACKET,
+        NO_COLON,
+        NO_LCBRACKET,
+        NO_RCBRACKET,
+        STATEMENT_ERROR
+    };
+    ast_node_t * node;
+    parse_result_t value;
+    token_t * tok;
+    error_t * error = NULL;
+    int state = START;
+    int error_state = NONE;
+    bool must_loop = true;
+    size_t lookahead_index = parser->token_lookahead_index;
+
+    node = ASTNode_New(NODE_OBJ_MSG_DEF);
+
+    do {
+        switch (state) {
+            case START:
+                value = Parser_ParseIdentifier(parser, false);
+                if (!value.node) {
+                    error_state = NO_IDENT;
+                } else {
+                    Vec_Append(node->as_obj_msg_def.selector, value.node);
+                    state = GOT_IDENT;
+                }
+                break;
+            
+            case GOT_IDENT:
+                tok = Parser_NextToken(parser, true, true);
+                if (!tok || (tok->type != TOKTYPE_COLON 
+                        && tok->type != TOKTYPE_LCBRACKET)) {
+                    error_state = NO_COLON_OR_BRACKET;
+                    if (tok) Parser_PushBackTokenList(parser);
+                } else {
+                    state = tok->type == TOKTYPE_COLON ? GOT_COLON : GOT_LCBRACKET;
+                }
+                break;
+            
+            case GOT_COLON:
+                value = Parser_ParseIdentifier(parser, false);
+                if (!value.node) {
+                    error_state = NO_IDENT;
+                } else {
+                    Vec_Append(node->as_obj_msg_def.selector, value.node);
+                    state = GOT_IDENT2;
+                }
+                break;
+            
+            case GOT_IDENT2:
+                value = Parser_ParseIdentifier(parser, false);
+                if (!value.node) {
+                    // the message has one parameter
+                    tok = Parser_NextToken(parser, false, false);
+                    if (!tok || tok->type != TOKTYPE_LCBRACKET) {
+                        error_state = NO_LCBRACKET;
+                        if (tok) Parser_PushBackTokenList(parser);
+                    } else {
+                        state = GOT_LCBRACKET;
+                    }
+                } else {
+                    Vec_Append(node->as_obj_msg_def.selector, value.node);
+                    state = GOT_IDENT3;
+                }
+                break;
+            
+            case GOT_IDENT3:
+                tok = Parser_NextToken(parser, true, true);
+                if (!tok || tok->type != TOKTYPE_COLON) {
+                    // error
+                    error_state = NO_COLON;
+                    if (tok) Parser_PushBackTokenList(parser);
+                } else if (tok->type == TOKTYPE_COLON) {
+                    state = GOT_COLON2;
+                }
+                break;
+            
+            case GOT_COLON2:
+                value = Parser_ParseIdentifier(parser, false);
+                if (!value.node) {
+                    error_state = NO_IDENT;
+                } else {
+                    Vec_Append(node->as_obj_msg_def.selector, value.node);
+                    state = GOT_IDENT4;
+                }
+                break;
+            
+            case GOT_IDENT4:
+                value = Parser_ParseIdentifier(parser, false);
+                if (!value.node) {
+                    // the message has no more parameters
+                    tok = Parser_NextToken(parser, false, false);
+                    if (!tok || tok->type != TOKTYPE_LCBRACKET) {
+                        error_state = NO_LCBRACKET;
+                    } else {
+                        state = GOT_LCBRACKET;
+                    }
+                } else {
+                    Vec_Append(node->as_obj_msg_def.selector, value.node);
+                    state = GOT_IDENT3;
+                }
+                break;
+            
+            case GOT_LCBRACKET:
+            case GOT_STATEMENT:
+                value = Parser_ParseStatement(parser, false);
+                if (!value.node) {
+                    // the block contains no statements
+                    tok = Parser_NextToken(parser, false, false);
+                    if (!tok || tok->type != TOKTYPE_RCBRACKET) {
+                        error_state = NO_RCBRACKET;
+                    } else {
+                        state = GOT_RCBRACKET;
+                    }
+                } else if (value.error) {
+                    error = value.error;
+                    error_state = STATEMENT_ERROR;
+                } else {
+                    state = GOT_STATEMENT;
+                    Vec_Append(node->as_obj_msg_def.statements, value.node);
+                }
+                break;
+            
+            case GOT_RCBRACKET:
+                must_loop = false;
+                break;
+        }
+    } while (must_loop && !error_state);
+
+    if (error_state) {
+        loc_t loc = Parser_CurrentLocation(parser);
+        switch (state) {
+            case START: // no message definition can be parsed, it's ok
+                break;
+            
+            case GOT_COLON:
+            case GOT_COLON2:
+                error = Err_NewWithLocation("Expected another parameter name after ':'", loc);
+                break;
+            
+            case GOT_IDENT2:
+            case GOT_IDENT3:
+                // we are not sure, maybe it's obj_field_init
+                parser->token_lookahead_index = lookahead_index;
+                break;
+
+            case GOT_IDENT:
+            case GOT_IDENT4:
+                error = Err_NewWithLocation("Expected a '{' after the message signature", loc);
+                break;
+
+            case GOT_LCBRACKET:
+            case GOT_STATEMENT:
+                if (!error) {
+                    error = Err_NewWithLocation("Expected a '}' after the message signature", loc);
+                }
+                break;
+
+            case GOT_RCBRACKET: // terminal state
+                break;
+        }
+        ASTNode_Free(node);
+        node = NULL;
+    }
+
+    parse_result_t res = {node, error};
+    return res;
+}
+
+parse_result_t Parser_ParseObjFieldInit(parser_t * parser) {
+    enum {
+        START,
+        GOT_IDENT,
+        GOT_COLON,
+        GOT_EXPRESSION
+    };
+    enum {
+        NONE,
+        NO_IDENT,
+        NO_COLON,
+        NO_EXPRESSION,
+        EXPR_ERROR
+    };
+    ast_node_t * node;
+    parse_result_t value;
+    token_t * tok;
+    error_t * error = NULL;
+    int state = START;
+    int error_state = NONE;
+    bool must_loop = true;
+
+    node = ASTNode_New(NODE_OBJ_FIELD_INIT);
+
+    do {
+        switch (state) {
+            case START:
+                value = Parser_ParseIdentifier(parser, false);
+                if (!value.node) {
+                    error_state = NO_IDENT;
+                } else {
+                    node->as_obj_field_init.ident = value.node;
+                    state = GOT_IDENT;
+                }
+                break;
+            
+            case GOT_IDENT:
+                tok = Parser_NextToken(parser, true, true);
+                if (!tok || tok->type != TOKTYPE_COLON) {
+                    error_state = NO_COLON;
+                    if (tok) Parser_PushBackTokenList(parser);
+                } else {
+                    state = GOT_COLON;
+                }
+                break;
+            
+            case GOT_COLON:
+                value = Parser_ParseExpr(parser);
+                if (!value.node) {
+                    error_state = NO_EXPRESSION;
+                } else if (value.error) {
+                    error = value.error;
+                    error_state = EXPR_ERROR;
+                } else {
+                    node->as_obj_field_init.value = value.node;
+                    state = GOT_EXPRESSION;
+                }
+                break;
+            
+            case GOT_EXPRESSION:
+                must_loop = false;
+                break;
+        }
+    } while (must_loop && !error_state);
+
+    if (error_state) {
+        loc_t loc = Parser_CurrentLocation(parser);
+        switch (state) {
+            case START: // no message definition can be parsed, it's ok
+                break;
+
+            case GOT_IDENT:
+                error = Err_NewWithLocation("Expected a ':' after identifier", loc);
+                break;
+            
+            case GOT_COLON:
+                if (!error) {
+                    error = Err_NewWithLocation("Expected an expression after ':'", loc);
+                }
+                break;
+            
+            case GOT_EXPRESSION: // terminal state
+                break;
+        }
+        ASTNode_Free(node);
+        node = NULL;
+    }
+
+    parse_result_t res = {node, error};
+    return res;
+}
+
+parse_result_t Parser_ParseObjLitteral(parser_t * parser) {
+    /// @todo code
+}
