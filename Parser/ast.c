@@ -207,22 +207,27 @@ static string * ASTNode_ToStringIndent(ast_node_t * node, size_t indent) {
             str2 = Str_New("}");
             APPEND_FREE(str, str2);
             break;
+
         case NODE_IDENTIFIER:
             snprintf(buf, 256, "ASTIdentifierNode { %s }", node->as_ident.value);
             str = Str_New(buf);
             break;
+
         case NODE_STRING:
             snprintf(buf, 256, "ASTStringNode { \"%s\" }", node->as_string.value);
             str = Str_New(buf);
             break;
+
         case NODE_INT:
             snprintf(buf, 256, "ASTIntNode { %d }", node->as_int.value);
             str = Str_New(buf);
             break;
+
         case NODE_DOUBLE:
             snprintf(buf, 256, "ASTDoubleNode { %lf }", node->as_double.value);
             str = Str_New(buf);
             break;
+
         case NODE_DECL:
             str = Str_New("ASTDeclNode {\n");
 
@@ -249,6 +254,7 @@ static string * ASTNode_ToStringIndent(ast_node_t * node, size_t indent) {
             str2 = Str_New("}");
             APPEND_FREE(str, str2);
             break;
+
         case NODE_AFFECT:
             str = Str_New("ASTAffectNode {\n");
 
@@ -275,6 +281,7 @@ static string * ASTNode_ToStringIndent(ast_node_t * node, size_t indent) {
             str2 = Str_New("}");
             APPEND_FREE(str, str2);
             break;
+
         case NODE_OBJ_FIELD_NAME:
             str = Str_New("ASTObjFieldNameNode {\n");
 
@@ -301,15 +308,89 @@ static string * ASTNode_ToStringIndent(ast_node_t * node, size_t indent) {
             str2 = Str_New("}");
             APPEND_FREE(str, str2);
             break;
+
         case NODE_OBJ_FIELD_INIT:
-            str = Str_New("ASTObjFieldInitNode { }"); /// @todo finish
+            str = Str_New("ASTObjFieldInitNode {\n");
+
+            str2 = ASTNode_Spaces(indent + 4);
+            APPEND_FREE(str, str2);
+            str2 = Str_New("ident=");
+            APPEND_FREE(str, str2);
+            str2 = ASTNode_ToStringIndent(node->as_obj_field_init.ident, indent + 4);
+            APPEND_FREE(str, str2);
+            str2 = Str_New("\n");
+            APPEND_FREE(str, str2);
+
+            str2 = ASTNode_Spaces(indent + 4);
+            APPEND_FREE(str, str2);
+            str2 = Str_New("value=");
+            APPEND_FREE(str, str2);
+            str2 = ASTNode_ToStringIndent(node->as_obj_field_init.value, indent + 4);
+            APPEND_FREE(str, str2);
+            str2 = Str_New("\n");
+            APPEND_FREE(str, str2);
+
+            str2 = ASTNode_Spaces(indent);
+            APPEND_FREE(str, str2);
+            str2 = Str_New("}");
+            APPEND_FREE(str, str2);
             break;
+
         case NODE_OBJ_MSG_DEF:
-            str = Str_New("ASTObjMsgDefNode { }"); /// @todo finish
+            str = Str_New("ASTObjMsgDefNode {\n");
+
+            str2 = ASTNode_Spaces(indent + 4);
+            APPEND_FREE(str, str2);
+            str2 = Str_New("selector={\n");
+            APPEND_FREE(str, str2);
+
+            for (size_t i = 0; i < Vec_GetLength(node->as_obj_msg_def.selector); i++) {
+                str2 = ASTNode_Spaces(indent + 8);
+                APPEND_FREE(str, str2);
+                str2 = ASTNode_ToStringIndent(Vec_GetAt(node->as_obj_msg_def.selector, i), indent + 8);
+                APPEND_FREE(str, str2);
+                str2 = Str_New(i != Vec_GetLength(node->as_obj_msg_def.selector) - 1 ? ",\n" : "\n");
+                APPEND_FREE(str, str2);
+            }
+
+            str2 = ASTNode_Spaces(indent + 4);
+            APPEND_FREE(str, str2);
+            str2 = Str_New("},\n");
+            APPEND_FREE(str, str2);
+
+            for (size_t i = 0; i < Vec_GetLength(node->as_obj_msg_def.statements); i++) {
+                str2 = ASTNode_Spaces(indent + 4);
+                APPEND_FREE(str, str2);
+                str2 = ASTNode_ToStringIndent(Vec_GetAt(node->as_obj_msg_def.statements, i), indent + 4);
+                APPEND_FREE(str, str2);
+                str2 = Str_New(i != Vec_GetLength(node->as_obj_msg_def.statements) - 1 ? ",\n" : "\n");
+                APPEND_FREE(str, str2);
+            }
+
+            str2 = ASTNode_Spaces(indent);
+            APPEND_FREE(str, str2);
+            str2 = Str_New("}");
+            APPEND_FREE(str, str2);
             break;
+
         case NODE_OBJ_LITTERAL:
-            str = Str_New("ASTObjLitteralNode { }"); /// @todo finish
+            str = Str_New("ASTObjLitteralNode {\n");
+
+            for (size_t i = 0; i < Vec_GetLength(node->as_obj_litteral.obj_fields); i++) {
+                str2 = ASTNode_Spaces(indent + 4);
+                APPEND_FREE(str, str2);
+                str2 = ASTNode_ToStringIndent(Vec_GetAt(node->as_obj_litteral.obj_fields, i), indent + 4);
+                APPEND_FREE(str, str2);
+                str2 = Str_New(i != Vec_GetLength(node->as_obj_litteral.obj_fields) - 1 ? ",\n" : "\n");
+                APPEND_FREE(str, str2);
+            }
+
+            str2 = ASTNode_Spaces(indent);
+            APPEND_FREE(str, str2);
+            str2 = Str_New("}");
+            APPEND_FREE(str, str2);
             break;
+
         case NODE_ARRAY_LITTERAL:
             str = Str_New("ASTArrayLitteralNode {\n");
 
@@ -327,6 +408,7 @@ static string * ASTNode_ToStringIndent(ast_node_t * node, size_t indent) {
             str2 = Str_New("}");
             APPEND_FREE(str, str2);
             break;
+
         case NODE_BLOCK:
             str = Str_New("ASTBlockNode {\n");
 
@@ -363,6 +445,7 @@ static string * ASTNode_ToStringIndent(ast_node_t * node, size_t indent) {
             str2 = Str_New("}");
             APPEND_FREE(str, str2);
             break;
+
         case NODE_ARRAY_ACCESS:
             str = Str_New("ASTArrayAccessNode {\n");
 
@@ -378,6 +461,7 @@ static string * ASTNode_ToStringIndent(ast_node_t * node, size_t indent) {
             str2 = Str_New("}");
             APPEND_FREE(str, str2);
             break;
+
         case NODE_DOTTED_EXPR:
             str = Str_New("ASTDottedExprNode {\n");
 
@@ -395,6 +479,7 @@ static string * ASTNode_ToStringIndent(ast_node_t * node, size_t indent) {
             str2 = Str_New("}");
             APPEND_FREE(str, str2);
             break;
+
         case NODE_MSG_PASS_EXPR:
             str = Str_New("ASTMsgPassExprNode {\n");
 
@@ -416,6 +501,7 @@ static string * ASTNode_ToStringIndent(ast_node_t * node, size_t indent) {
             str2 = Str_New("}");
             APPEND_FREE(str, str2);
             break;
+
         case NODE_OR_EXPR:
             str = Str_New("ASTOrExprNode {\n");
 
@@ -433,6 +519,7 @@ static string * ASTNode_ToStringIndent(ast_node_t * node, size_t indent) {
             str2 = Str_New("}");
             APPEND_FREE(str, str2);
             break;
+
         case NODE_AND_EXPR:
             str = Str_New("ASTAndExprNode {\n");
             
@@ -450,6 +537,7 @@ static string * ASTNode_ToStringIndent(ast_node_t * node, size_t indent) {
             str2 = Str_New("}");
             APPEND_FREE(str, str2);
             break;
+
         case NODE_EQ_EXPR:
             str = Str_New("ASTEqExprNode {\n");
 
@@ -476,6 +564,7 @@ static string * ASTNode_ToStringIndent(ast_node_t * node, size_t indent) {
             str2 = Str_New(" }");
             APPEND_FREE(str, str2);
             break;
+
         case NODE_COMP_EXPR:
             str = Str_New("ASTCompExprNode {\n");
 
@@ -502,6 +591,7 @@ static string * ASTNode_ToStringIndent(ast_node_t * node, size_t indent) {
             str2 = Str_New(" }");
             APPEND_FREE(str, str2);
             break;
+
         case NODE_ARITH_EXPR:
             str = Str_New("ASTArithExprNode {\n");
 
@@ -528,6 +618,7 @@ static string * ASTNode_ToStringIndent(ast_node_t * node, size_t indent) {
             str2 = Str_New(" }");
             APPEND_FREE(str, str2);
             break;
+
         case NODE_TERM_EXPR:
             str = Str_New("ASTTermExprNode {\n");
             
@@ -545,6 +636,7 @@ static string * ASTNode_ToStringIndent(ast_node_t * node, size_t indent) {
             str2 = Str_New("}");
             APPEND_FREE(str, str2);
             break;
+
         case NODE_FACTOR_EXPR:
             str = Str_New("ASTFactorExprNode {\n");
             
@@ -562,6 +654,7 @@ static string * ASTNode_ToStringIndent(ast_node_t * node, size_t indent) {
             str2 = Str_New("}");
             APPEND_FREE(str, str2);
             break;
+
         case NODE_UNARY_EXPR:
             str = Str_New("ASTUnaryExprNode {\n");
 
@@ -586,6 +679,7 @@ static string * ASTNode_ToStringIndent(ast_node_t * node, size_t indent) {
             str2 = Str_New("}");
             APPEND_FREE(str, str2);
             break;
+
         case NODE_STATEMENT:
             str = Str_New("ASTStatementNode {\n");
 

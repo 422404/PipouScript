@@ -6,6 +6,7 @@
 #include "Parser/include/parser.h"
 #include "ast.h"
 #include "seatest.h"
+#include "error.h"
 
 static char * test_buf1 = "abcd \"hello world!\" 1337 3.14159265";
 
@@ -96,6 +97,14 @@ static char * test_buf72 = "a: b:";
 static char * test_buf73 = "a: b c:";
 static char * test_buf74 = "a: b c: d";
 static char * test_buf75 = "a: b c: d {";
+
+static char * test_buf76 = "{}";
+static char * test_buf77 = "{a: 1337}";
+static char * test_buf78 = "{a { expr }}";
+static char * test_buf79 = "{a: b c: d { b + d }}";
+static char * test_buf80 = "{a: 1337, c: 13.37}";
+static char * test_buf81 = "{a: 1337, c: 13.37,}";
+static char * test_buf82 = "{m: s g: p {s[p]}, a: 1337, c: 13.37}";
 
 // test_buf1
 static ast_node_t expected1[] = {
@@ -1212,6 +1221,8 @@ void Test_ParseObjMsgDef(void) {
     assert_true(node.error != NULL);
     Err_Free(node.error);
     Parser_Free(parser);
+
+    /// @todo more tests
 }
 
 void Test_ParseObjFieldInit(void) {
@@ -1253,6 +1264,86 @@ void Test_ParseObjFieldInit(void) {
     Parser_Free(parser);
 }
 
+void Test_ParseObjLitteral(void) {
+    parser_t * parser;
+    parse_result_t node;
+
+    // nominal case: obj_litteral with no members
+    parser = Parser_New(test_buf76, strlen(test_buf76), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseObjLitteral(parser);
+    assert_true(node.node != NULL);
+    assert_int_equal(0, Vec_GetLength(node.node->as_obj_litteral.obj_fields));
+    ASTNode_Free(node.node);
+    Parser_Free(parser);
+
+    // nominal case: obj_litteral one field
+    parser = Parser_New(test_buf77, strlen(test_buf77), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseObjLitteral(parser);
+    assert_true(node.node != NULL);
+    assert_int_equal(1, Vec_GetLength(node.node->as_obj_litteral.obj_fields));
+    assert_int_equal(NODE_OBJ_FIELD_INIT, ((ast_node_t *)Vec_GetAt(node.node->as_obj_litteral.obj_fields, 0))->type);
+    ASTNode_Free(node.node);
+    Parser_Free(parser);
+
+    // nominal case: obj_litteral with one message
+    parser = Parser_New(test_buf78, strlen(test_buf78), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseObjLitteral(parser);
+    assert_true(node.node != NULL);
+    assert_int_equal(1, Vec_GetLength(node.node->as_obj_litteral.obj_fields));
+    assert_int_equal(NODE_OBJ_MSG_DEF, ((ast_node_t *)Vec_GetAt(node.node->as_obj_litteral.obj_fields, 0))->type);
+    ASTNode_Free(node.node);
+    Parser_Free(parser);
+
+    // nominal case: obj_litteral with one message with multiple parameters
+    parser = Parser_New(test_buf79, strlen(test_buf79), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseObjLitteral(parser);
+    assert_true(node.node != NULL);
+    assert_int_equal(1, Vec_GetLength(node.node->as_obj_litteral.obj_fields));
+    assert_int_equal(NODE_OBJ_MSG_DEF, ((ast_node_t *)Vec_GetAt(node.node->as_obj_litteral.obj_fields, 0))->type);
+    ASTNode_Free(node.node);
+    Parser_Free(parser);
+
+    // nominal case: obj_litteral with two fields
+    parser = Parser_New(test_buf80, strlen(test_buf80), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseObjLitteral(parser);
+    assert_true(node.node != NULL);
+    assert_int_equal(2, Vec_GetLength(node.node->as_obj_litteral.obj_fields));
+    assert_int_equal(NODE_OBJ_FIELD_INIT, ((ast_node_t *)Vec_GetAt(node.node->as_obj_litteral.obj_fields, 0))->type);
+    assert_int_equal(NODE_OBJ_FIELD_INIT, ((ast_node_t *)Vec_GetAt(node.node->as_obj_litteral.obj_fields, 1))->type);
+    ASTNode_Free(node.node);
+    Parser_Free(parser);
+
+    // nominal case: obj_litteral with two fields and a trailing ','
+    parser = Parser_New(test_buf81, strlen(test_buf81), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseObjLitteral(parser);
+    assert_true(node.node != NULL);
+    assert_int_equal(2, Vec_GetLength(node.node->as_obj_litteral.obj_fields));
+    assert_int_equal(NODE_OBJ_FIELD_INIT, ((ast_node_t *)Vec_GetAt(node.node->as_obj_litteral.obj_fields, 0))->type);
+    assert_int_equal(NODE_OBJ_FIELD_INIT, ((ast_node_t *)Vec_GetAt(node.node->as_obj_litteral.obj_fields, 1))->type);
+    ASTNode_Free(node.node);
+    Parser_Free(parser);
+
+    // nominal case: obj_litteral with a multiple parameters message and two fields and a trailing
+    parser = Parser_New(test_buf82, strlen(test_buf82), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseObjLitteral(parser);
+    assert_true(node.node != NULL);
+    assert_int_equal(3, Vec_GetLength(node.node->as_obj_litteral.obj_fields));
+    assert_int_equal(NODE_OBJ_MSG_DEF, ((ast_node_t *)Vec_GetAt(node.node->as_obj_litteral.obj_fields, 0))->type);
+    assert_int_equal(NODE_OBJ_FIELD_INIT, ((ast_node_t *)Vec_GetAt(node.node->as_obj_litteral.obj_fields, 1))->type);
+    assert_int_equal(NODE_OBJ_FIELD_INIT, ((ast_node_t *)Vec_GetAt(node.node->as_obj_litteral.obj_fields, 2))->type);
+    ASTNode_Free(node.node);
+    Parser_Free(parser);
+
+    /// @todo error cases
+}
+
 /**
  * Runs all the parser tests
  */
@@ -1274,4 +1365,5 @@ void Test_ParserTests(void) {
     run_test(Test_ParseBlock);
     run_test(Test_ParseObjMsgDef);
     run_test(Test_ParseObjFieldInit);
+    run_test(Test_ParseObjLitteral);
 }

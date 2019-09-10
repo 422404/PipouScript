@@ -1159,7 +1159,7 @@ parse_result_t Parser_ParseLitteralExpr(parser_t * parser) {
     parse_result_t value;
     parse_result_t (*funcs[])(parser_t *) = {
         Parser_ParseInt, Parser_ParseDouble, Parser_ParseString,
-        Parser_ParseArrayLitteral, Parser_ParseBlock
+        Parser_ParseArrayLitteral, Parser_ParseObjLitteral, Parser_ParseBlock
     };
 
     for (size_t i = 0; i < 5; i++) {
@@ -1481,7 +1481,7 @@ parse_result_t Parser_ParseObjMsgDef(parser_t * parser) {
                 break;
             
             case GOT_IDENT:
-                tok = Parser_NextToken(parser, true, true);
+                tok = Parser_NextToken(parser, false, false);
                 if (!tok || (tok->type != TOKTYPE_COLON 
                         && tok->type != TOKTYPE_LCBRACKET)) {
                     error_state = NO_COLON_OR_BRACKET;
@@ -1587,11 +1587,11 @@ parse_result_t Parser_ParseObjMsgDef(parser_t * parser) {
             case START: // no message definition can be parsed, it's ok
                 break;
             
-            case GOT_COLON:
             case GOT_COLON2:
                 error = Err_NewWithLocation("Expected another parameter name after ':'", loc);
                 break;
             
+            case GOT_COLON:
             case GOT_IDENT2:
             case GOT_IDENT3:
                 // we are not sure, maybe it's obj_field_init
@@ -1714,5 +1714,112 @@ parse_result_t Parser_ParseObjFieldInit(parser_t * parser) {
 }
 
 parse_result_t Parser_ParseObjLitteral(parser_t * parser) {
-    /// @todo code
+    enum {
+        START,
+        GOT_LCBRACKET,
+        GOT_MEMBER,
+        GOT_COMMA,
+        GOT_RCBRACKET
+    };
+    enum {
+        NONE,
+        NO_LCBRACKET,
+        MEMBER_ERROR,
+        NO_COMMA_OR_RCBRACKET,
+        NO_RCBRACKET
+    };
+    ast_node_t * node;
+    parse_result_t value;
+    token_t * tok;
+    error_t * error = NULL;
+    int state = START;
+    int error_state = NONE;
+    bool must_loop = true;
+
+    node = ASTNode_New(NODE_OBJ_LITTERAL);
+
+    do {
+        switch (state) {
+            case START:
+                tok = Parser_NextToken(parser, false, false);
+                if (!tok || tok->type != TOKTYPE_LCBRACKET) {
+                    error_state = NO_LCBRACKET;
+                    if (tok) Parser_PushBackTokenList(parser);
+                } else {
+                    state = GOT_LCBRACKET;
+                }
+                break;
+            
+            case GOT_LCBRACKET:
+            case GOT_COMMA:
+                value = Parser_ParseObjMsgDef(parser);
+                if (value.node) {
+                    Vec_Append(node->as_obj_litteral.obj_fields, value.node);
+                    state = GOT_MEMBER;
+                } else if (value.error) {
+                    error = value.error;
+                } else {
+                    value = Parser_ParseObjFieldInit(parser);
+                    if (value.node) {
+                        Vec_Append(node->as_obj_litteral.obj_fields, value.node);
+                        state = GOT_MEMBER;
+                    } else if (value.error) {
+                        error = value.error;
+                    } else {
+                        tok = Parser_NextToken(parser, false, false);
+                        if (!tok || tok->type != TOKTYPE_RCBRACKET) {
+                            error_state = NO_RCBRACKET;
+                            if (tok) Parser_PushBackTokenList(parser);
+                        } else {
+                            state = GOT_RCBRACKET;
+                        }
+                    }
+                }
+                break;
+            
+            case GOT_MEMBER:
+                tok = Parser_NextToken(parser, false, false);
+                if (!tok || (tok->type != TOKTYPE_COMMA
+                        && tok->type != TOKTYPE_RCBRACKET)) {
+                    error_state = NO_COMMA_OR_RCBRACKET;
+                    if (tok) Parser_PushBackTokenList(parser);
+                } else {
+                    state = tok->type == TOKTYPE_COMMA ? GOT_COMMA: GOT_RCBRACKET;
+                }
+                break;
+            
+            case GOT_RCBRACKET:
+                must_loop = false;
+                break;
+
+        }
+    } while (must_loop && !error_state);
+
+    if (error_state) {
+        loc_t loc = Parser_CurrentLocation(parser);
+        switch (state) {
+            case START: // no obj_litteral to parse, it's ok
+                break;
+            
+            case GOT_LCBRACKET:
+            case GOT_COMMA:
+                if (!error) {
+                    error = Err_NewWithLocation("Expected a '}' at the end of the object litteral", loc);
+                }
+                break;
+            
+            case GOT_MEMBER:
+                error = Err_NewWithLocation("Expected ',' to add another member "
+                                            "or '}' to close the object litteral", loc);
+                break;
+            
+            case GOT_RCBRACKET: // terminal state
+                break;
+        }
+        ASTNode_Free(node);
+        node = NULL;
+    }
+
+    parse_result_t res = {node, error};
+    return res;
 }
