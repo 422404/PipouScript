@@ -83,9 +83,26 @@ parse_result_t Parser_ParseObjFieldName(parser_t * parser);
 parse_result_t Parser_ParseArrayLitteral(parser_t * parser);
 parse_result_t Parser_ParseBlock(parser_t * parser);
 parse_result_t Parser_ParseArrayAccess(parser_t * parser);
+
+/**
+ * @retval an ast_node_t<ast_dotted_expr_t> * if there is atleast 2 components (a.b or a[b])
+ * @retval an ast_node_t<ast_identifier_t> * if only one component
+ */
 parse_result_t Parser_ParseDottedExpr(parser_t * parser);
+
+/**
+ * @retval an ast_node_t<ast_msg_pass_expr_t> * if there is atleast 2 components (a b: "hello" or a b)
+ * @retval an ast_node_t<T> * if only one component of type T
+ */
 parse_result_t Parser_ParseMsgPassExpr(parser_t * parser);
 parse_result_t Parser_ParseExpr(parser_t * parser);
+
+/**
+ * @param[in] parser
+ * @param     type   NODE_OR_EXPR <= type <= NODE_FACTOR_EXPR
+ * @retval an ast_node_t<ast_expr_t> * if there is atleast 2 components (a <op of type> b)
+ * @retval an ast_node_t<T> * if only one component of type T
+ */
 parse_result_t Parser_ParseBinaryExpr(parser_t * parser, ast_node_type_t type);
 parse_result_t Parser_ParseUnaryExpr(parser_t * parser);
 parse_result_t Parser_ParseStatement(parser_t * parser, bool module_scope);

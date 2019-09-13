@@ -377,14 +377,17 @@ static token_t * Lex_ParseCompoundToken(lexer_t * lexer) {
             token_type = TOKTYPE_COMMENT;
         } else if (Lex_TryParseInteger(lexer)) {
             token_type = TOKTYPE_INT;
+            bool is_exponent = false;
             // might also be a double
-            if (Lex_NextCharIs(lexer, '.') && Lex_InBufferBounds(lexer, lexer->current_char + 2)
+            is_exponent = Lex_NextCharIs(lexer, 'e');
+            if ((Lex_NextCharIs(lexer, '.') || is_exponent)
+                    && Lex_InBufferBounds(lexer, lexer->current_char + 2)
                     && *(lexer->current_char + 2) >= '0' && *(lexer->current_char + 2) <= '9') {
                 token_type = TOKTYPE_DOUBLE;
                 Lex_IncrementCurrentChar(lexer);
                 Lex_IncrementCurrentChar(lexer);
                 Lex_TryParseInteger(lexer);
-                if (Lex_NextCharIs(lexer, 'e') && Lex_InBufferBounds(lexer, lexer->current_char + 2)
+                if (!is_exponent && Lex_NextCharIs(lexer, 'e') && Lex_InBufferBounds(lexer, lexer->current_char + 2)
                         && *(lexer->current_char + 2) >= '0' && *(lexer->current_char + 2) <= '9') {
                     Lex_IncrementCurrentChar(lexer);
                     Lex_IncrementCurrentChar(lexer);

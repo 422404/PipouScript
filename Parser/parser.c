@@ -39,7 +39,7 @@ static token_t * Parser_NextToken(parser_t * parser, bool preserve_whitespaces,
                 parser->token_lookahead_index++;
             }
         }
-        must_loop = token 
+        must_loop = token
                 && ((!preserve_whitespaces && Token_IsWhitespace(token))
                     || (!preserve_comments && token->type == TOKTYPE_COMMENT));
     } while (must_loop);
@@ -68,7 +68,7 @@ static loc_t Parser_CurrentLocation(parser_t * parser) {
     loc_t loc;
 
     if (parser->token_lookahead_index < Vec_GetLength(parser->token_lookahead)) {
-        loc = ((token_t *)Vec_GetAt(parser->token_lookahead, parser->token_lookahead_index))->span.end;
+        loc = ((token_t *)Vec_GetAt(parser->token_lookahead, parser->token_lookahead_index))->span.start;
     } else {
         loc = parser->lexer->pos;
     }
@@ -312,6 +312,8 @@ parse_result_t Parser_ParseExpr(parser_t * parser) {
 /**
  * @param[in] parser
  * @param     type   NODE_OR_EXPR <= type <= NODE_FACTOR_EXPR
+ * @retval an ast_node_t<ast_expr_t> * if there is atleast 2 components (a <op of type> b)
+ * @retval an ast_node_t<T> * if only one component of type T
  */
 parse_result_t Parser_ParseBinaryExpr(parser_t * parser, ast_node_type_t type) {
     ast_node_t * node;
@@ -437,6 +439,10 @@ parse_result_t Parser_ParseBinaryExpr(parser_t * parser, ast_node_type_t type) {
     return res;
 }
 
+/**
+ * @retval an ast_node_t<ast_msg_pass_expr_t> * if there is atleast 2 components (a b: "hello" or a b)
+ * @retval an ast_node_t<T> * if only one component of type T
+ */
 parse_result_t Parser_ParseMsgPassExpr(parser_t * parser) {
     enum {
         START,
@@ -454,7 +460,8 @@ parse_result_t Parser_ParseMsgPassExpr(parser_t * parser) {
         NO_ATOM_EXPR,
         NO_IDENT,
         NO_COLON,
-        ATOM_EXPR_ERROR
+        ATOM_EXPR_ERROR,
+        NO_SPACE_BEFORE_MESSAGE
     };
     ast_node_t * node;
     parse_result_t value;
@@ -480,12 +487,27 @@ parse_result_t Parser_ParseMsgPassExpr(parser_t * parser) {
                 break;
             
             case GOT_ATOM_EXPR:
-                value = Parser_ParseIdentifier(parser, false);
-                if (value.node) {
-                    Vec_Append(node->as_msg_pass_expr.components, value.node);
-                    state = GOT_IDENT;
-                } else {
-                    must_loop = false;
+                {
+                    bool got_spacing = false;
+                    // we want spacing before message name
+                    tok = Parser_NextToken(parser, true, true);
+                    if (tok && (Token_IsWhitespace(tok) || tok->type == TOKTYPE_COMMENT)) {
+                        got_spacing = true;
+                    }
+                    if (tok) Parser_PushBackTokenList(parser);
+                    value = Parser_ParseIdentifier(parser, false);
+                    if (value.node) {
+                        if (got_spacing) {
+                            Vec_Append(node->as_msg_pass_expr.components, value.node);
+                            state = GOT_IDENT;
+                        } else {
+                            error_state = NO_SPACE_BEFORE_MESSAGE;
+                            ASTNode_Free(value.node);
+                            Parser_PushBackTokenList(parser);
+                        }
+                    } else {
+                        must_loop = false;
+                    }
                 }
                 break;
             
@@ -554,10 +576,13 @@ parse_result_t Parser_ParseMsgPassExpr(parser_t * parser) {
             case START: // 'error' is already set if it needs to
                 break;
 
-            case GOT_ATOM_EXPR: // terminal states
-            case GOT_ATOM_EXPR2:
+            case GOT_ATOM_EXPR:
+                error = Err_NewWithLocation("Expected spacing before message name", loc);
+                break;
+            
+            case GOT_ATOM_EXPR2: // terminal states
             case GOT_ATOM_EXPR3:
-            case GOT_IDENT: // terminal state, no errors
+            case GOT_IDENT:
                 break;
 
             case GOT_COLON:
@@ -839,6 +864,10 @@ parse_result_t Parser_ParseArrayAccess(parser_t * parser) {
     return res;
 }
 
+/**
+ * @retval an ast_node_t<ast_dotted_expr_t> * if there is atleast 2 components (a.b or a[b])
+ * @retval an ast_node_t<ast_identifier_t> * if only one component
+ */
 parse_result_t Parser_ParseDottedExpr(parser_t * parser) {
     enum {
         START,
@@ -861,6 +890,7 @@ parse_result_t Parser_ParseDottedExpr(parser_t * parser) {
     int state = START;
     int error_state = NONE;
     bool must_loop = true;
+    size_t lookahead_index;
 
     node = ASTNode_New(NODE_DOTTED_EXPR);
 
@@ -884,7 +914,7 @@ parse_result_t Parser_ParseDottedExpr(parser_t * parser) {
                         error = value.error;
                         error_state = ARRAY_ACCESS_ERROR;
                     } else {
-                        state = GOT_ARRAY_ACCESS;
+                        state = GOT_ARRAY_ACCESS2;
                     }
                 } else {
                     Vec_Append(node->as_dotted_expr.components, value.node);
@@ -908,10 +938,12 @@ parse_result_t Parser_ParseDottedExpr(parser_t * parser) {
                 break;
             
             case GOT_ARRAY_ACCESS2:
+                lookahead_index = parser->token_lookahead_index; // fix for ease of parsing in Parser_ParseMsgPassExpr()
                 tok = Parser_NextToken(parser, false, false);
                 if (!tok || tok->type != TOKTYPE_DOT) {
+                    parser->token_lookahead_index = lookahead_index;
                     must_loop = false;
-                    if (tok) Parser_PushBackTokenList(parser);
+                    // if (tok) Parser_PushBackTokenList(parser);
                 } else {
                     state = GOT_DOT;
                 }
@@ -931,7 +963,6 @@ parse_result_t Parser_ParseDottedExpr(parser_t * parser) {
     } while (must_loop && !error_state);
 
     if (error_state) {
-        char buf[256];
         loc_t loc = Parser_CurrentLocation(parser);
         switch (state) {
             case START: // no identifier to parse, it's ok
@@ -944,8 +975,7 @@ parse_result_t Parser_ParseDottedExpr(parser_t * parser) {
             
             case GOT_DOT:
                 if (!error) {
-                    snprintf(buf, 256, "Expected a field name after the '.'");
-                    error = Err_NewWithLocation(buf, loc);
+                    error = Err_NewWithLocation("Expected a field name after the '.'", loc);
                 }
                 break;
 
@@ -954,6 +984,14 @@ parse_result_t Parser_ParseDottedExpr(parser_t * parser) {
         }
         ASTNode_Free(node);
         node = NULL;
+    } else if (Vec_GetLength(node->as_dotted_expr.components) == 1) {
+        /* 
+         * we shorten the ast tree by skipping nodes that were
+         * the only children of their parent
+         */
+        ast_node_t * node2 = Vec_Pop(node->as_dotted_expr.components);
+        ASTNode_Free(node);
+        node = node2;
     }
 
     parse_result_t res = {node, error};
@@ -1154,7 +1192,6 @@ parse_result_t Parser_ParseAtomExpr(parser_t * parser) {
     return res;
 }
 
-/// @todo parse all litterals
 parse_result_t Parser_ParseLitteralExpr(parser_t * parser) {
     parse_result_t value;
     parse_result_t (*funcs[])(parser_t *) = {

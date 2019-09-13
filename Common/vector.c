@@ -132,8 +132,6 @@ void Vec_Append(vector_t * vector, void * elem) {
  * Pops an element from the vector
  * @param[in] vector A pointer to the vector
  * @returns          The poped element
- * 
- * @todo Think about reallocating while poping
  */
 void * Vec_Pop(vector_t * vector) {
     void * elem = NULL;

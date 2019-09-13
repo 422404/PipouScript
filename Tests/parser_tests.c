@@ -106,6 +106,8 @@ static char * test_buf80 = "{a: 1337, c: 13.37}";
 static char * test_buf81 = "{a: 1337, c: 13.37,}";
 static char * test_buf82 = "{m: s g: p {s[p]}, a: 1337, c: 13.37}";
 
+static char * test_buf83 = "1337abcd";
+
 // test_buf1
 static ast_node_t expected1[] = {
     {NODE_IDENTIFIER, .as_ident  = {.value = "abcd"        }},
@@ -326,12 +328,7 @@ void Test_ParseDottedExpr(void) {
     assert_true(parser != NULL);
     node = Parser_ParseDottedExpr(parser);
     assert_true(node.node != NULL);
-    assert_int_equal(1, Vec_GetLength(node.node->as_dotted_expr.components));
-    {
-        ast_node_t * node2;
-        node2 = Vec_GetAt(node.node->as_dotted_expr.components, 0);
-        assert_int_equal(NODE_IDENTIFIER, node2->type);
-    }
+    assert_int_equal(NODE_IDENTIFIER, node.node->type);
     ASTNode_Free(node.node);
     Parser_Free(parser);
 
@@ -534,7 +531,7 @@ void Test_ParseAffect(void) {
     assert_true(node.error == NULL);
     Parser_Free(parser);
 
-    // error case: the is a dotted_expr but no '='
+    // error case: the is an variable name but no '='
     parser = Parser_New(test_buf1, strlen(test_buf1), NULL, false);
     assert_true(parser != NULL);
     node = Parser_ParseAffect(parser);
@@ -542,7 +539,7 @@ void Test_ParseAffect(void) {
     assert_true(node.error == NULL);
     Parser_Free(parser);
 
-    // error case: no dotted_expr
+    // error case: no variable name
     parser = Parser_New(test_buf27, strlen(test_buf27), NULL, false);
     assert_true(parser != NULL);
     node = Parser_ParseAffect(parser);
@@ -662,7 +659,7 @@ void Test_ParseBinaryExpr(void) {
     assert_int_equal(2, Vec_GetLength(node.node->as_expr.values));
     for (size_t i = 0; i < 2; i++) {
         val = Vec_GetAt(node.node->as_expr.values, i);
-        assert_int_equal(NODE_DOTTED_EXPR, val->type);
+        assert_int_equal(NODE_IDENTIFIER, val->type);
     }
     ASTNode_Free(node.node);
     Parser_Free(parser);
@@ -677,7 +674,7 @@ void Test_ParseBinaryExpr(void) {
     assert_int_equal(3, Vec_GetLength(node.node->as_expr.values));
     for (size_t i = 0; i < 3; i++) {
         val = Vec_GetAt(node.node->as_expr.values, i);
-        assert_int_equal(NODE_DOTTED_EXPR, val->type);
+        assert_int_equal(NODE_IDENTIFIER, val->type);
     }
     ASTNode_Free(node.node);
     Parser_Free(parser);
@@ -692,12 +689,12 @@ void Test_ParseBinaryExpr(void) {
     assert_int_equal(2, Vec_GetLength(node.node->as_expr.values));
     for (size_t i = 0; i < 2; i++) {
         val = Vec_GetAt(node.node->as_expr.values, i);
-        assert_int_equal(NODE_DOTTED_EXPR, val->type);
+        assert_int_equal(NODE_IDENTIFIER, val->type);
     }
     ASTNode_Free(node.node);
     Parser_Free(parser);
 
-    // nominal case: binary OR of a binary AND and a dotted_expr
+    // nominal case: binary OR of a binary AND and a variable
     parser = Parser_New(test_buf39, strlen(test_buf39), NULL, false);
     assert_true(parser != NULL);
     node = Parser_ParseBinaryExpr(parser, NODE_OR_EXPR);
@@ -706,7 +703,7 @@ void Test_ParseBinaryExpr(void) {
     assert_int_equal(TOKTYPE_PIPEPIPE, node.node->as_expr.op);
     assert_int_equal(2, Vec_GetLength(node.node->as_expr.values));
     {
-        ast_node_type_t types[] = {NODE_AND_EXPR, NODE_DOTTED_EXPR};
+        ast_node_type_t types[] = {NODE_AND_EXPR, NODE_IDENTIFIER};
         ast_node_t * val2;
         for (size_t i = 0; i < 2; i++) {
             val = Vec_GetAt(node.node->as_expr.values, i);
@@ -714,7 +711,7 @@ void Test_ParseBinaryExpr(void) {
             if (val->type == NODE_AND_EXPR) {
                 for (size_t j = 0; j < 2; j++) {
                     val2 = Vec_GetAt(val->as_expr.values, j);
-                    assert_int_equal(NODE_DOTTED_EXPR, val2->type);
+                    assert_int_equal(NODE_IDENTIFIER, val2->type);
                 }
             }
         }
@@ -722,7 +719,7 @@ void Test_ParseBinaryExpr(void) {
     ASTNode_Free(node.node);
     Parser_Free(parser);
 
-    // nominal case: binary OR of a ternary addition of dotted_exprs and a dotted_expr
+    // nominal case: binary OR of a ternary addition of variables and a variable
     parser = Parser_New(test_buf40, strlen(test_buf40), NULL, false);
     assert_true(parser != NULL);
     node = Parser_ParseBinaryExpr(parser, NODE_OR_EXPR);
@@ -731,7 +728,7 @@ void Test_ParseBinaryExpr(void) {
     assert_int_equal(TOKTYPE_PIPEPIPE, node.node->as_expr.op);
     assert_int_equal(2, Vec_GetLength(node.node->as_expr.values));
     {
-        ast_node_type_t types[] = {NODE_ARITH_EXPR, NODE_DOTTED_EXPR};
+        ast_node_type_t types[] = {NODE_ARITH_EXPR, NODE_IDENTIFIER};
         ast_node_t * val2;
         for (size_t i = 0; i < 2; i++) {
             val = Vec_GetAt(node.node->as_expr.values, i);
@@ -740,7 +737,7 @@ void Test_ParseBinaryExpr(void) {
                 assert_int_equal(3, Vec_GetLength(val->as_expr.values));
                 for (size_t j = 0; j < 3; j++) {
                     val2 = Vec_GetAt(val->as_expr.values, j);
-                    assert_int_equal(NODE_DOTTED_EXPR, val2->type);
+                    assert_int_equal(NODE_IDENTIFIER, val2->type);
                 }
             }
         }
@@ -748,8 +745,8 @@ void Test_ParseBinaryExpr(void) {
     ASTNode_Free(node.node);
     Parser_Free(parser);
 
-    // nominal case: addition of a dotted_expr and a substraction of a dotted_expr
-    //               and an addition of two dotted_expr
+    // nominal case: addition of a variable and a substraction of a variable
+    //               and an addition of two variables
     parser = Parser_New(test_buf41, strlen(test_buf41), NULL, false);
     assert_true(parser != NULL);
     node = Parser_ParseBinaryExpr(parser, NODE_OR_EXPR);
@@ -758,7 +755,7 @@ void Test_ParseBinaryExpr(void) {
     assert_int_equal(TOKTYPE_PLUS, node.node->as_expr.op);
     assert_int_equal(2, Vec_GetLength(node.node->as_expr.values));
     {
-        ast_node_type_t types[] = {NODE_DOTTED_EXPR, NODE_ARITH_EXPR};
+        ast_node_type_t types[] = {NODE_IDENTIFIER, NODE_ARITH_EXPR};
         ast_node_t * val2, * val3;
         for (size_t i = 0; i < 2; i++) {
             val = Vec_GetAt(node.node->as_expr.values, i);
@@ -772,7 +769,7 @@ void Test_ParseBinaryExpr(void) {
                         assert_int_equal(2, Vec_GetLength(val2->as_expr.values));
                         for (size_t k = 0; k < 2; k++) {
                             val3 = Vec_GetAt(val2->as_expr.values, k);
-                            assert_int_equal(NODE_DOTTED_EXPR, val3->type);
+                            assert_int_equal(NODE_IDENTIFIER, val3->type);
                         }
                     }
                 }
@@ -841,12 +838,12 @@ void Test_ParseAtomExpr(void) {
     ASTNode_Free(node.node);
     Parser_Free(parser);
 
-    // nominal case: there is a dotted_expr
+    // nominal case: there is a expression
     parser = Parser_New(test_buf47, strlen(test_buf47), NULL, false);
     assert_true(parser != NULL);
     node = Parser_ParseAtomExpr(parser);
     assert_true(node.node != NULL);
-    assert_int_equal(NODE_DOTTED_EXPR, node.node->type);
+    assert_int_equal(NODE_IDENTIFIER, node.node->type);
     ASTNode_Free(node.node);
     Parser_Free(parser);
 
@@ -859,7 +856,7 @@ void Test_ParseAtomExpr(void) {
     ASTNode_Free(node.node);
     Parser_Free(parser);
 
-    // error case: no dotted_expr after '('
+    // error case: no expression after '('
     parser = Parser_New(test_buf45, strlen(test_buf45), NULL, false);
     assert_true(parser != NULL);
     node = Parser_ParseAtomExpr(parser);
@@ -868,7 +865,7 @@ void Test_ParseAtomExpr(void) {
     Err_Free(node.error);
     Parser_Free(parser);
 
-    // error case: no ')' after dotted_expr
+    // error case: no ')' after expression
     parser = Parser_New(test_buf46, strlen(test_buf46), NULL, false);
     assert_true(parser != NULL);
     node = Parser_ParseAtomExpr(parser);
@@ -1049,6 +1046,15 @@ void Test_ParseMsgPassExpr(void) {
 
     // error case: trailing ident
     parser = Parser_New(test_buf60, strlen(test_buf60), NULL, false);
+    assert_true(parser != NULL);
+    node = Parser_ParseMsgPassExpr(parser);
+    assert_true(node.node == NULL);
+    assert_true(node.error != NULL);
+    Err_Free(node.error);
+    Parser_Free(parser);
+
+    // error case: no spacing before message name
+    parser = Parser_New(test_buf83, strlen(test_buf83), NULL, false);
     assert_true(parser != NULL);
     node = Parser_ParseMsgPassExpr(parser);
     assert_true(node.node == NULL);
