@@ -39,6 +39,9 @@ typedef struct {
     
     /** Current status of the lexer */
     lexer_status_t status;
+
+    /** Last error that occured if any */
+    error_t * error;
 } lexer_t;
 
 /**
@@ -75,3 +78,10 @@ token_t * Lex_NextToken(lexer_t * lexer, bool preserve_whitespaces, bool preserv
  * @returns The current status of the lexer
  */
 lexer_status_t Lex_GetStatus(lexer_t * lexer);
+
+/**
+ * Returns the error that the lexer encountered if any
+ * @retval NULL if no error
+ * @retval A pointer to an error if any
+ */
+error_t * Lex_GetError(lexer_t * lexer);

@@ -158,7 +158,6 @@ void Test_LexerUnterminatedStringError(void) {
     assert_true(token == NULL);
     assert_int_equal(LEX_ERROR, Lex_GetStatus(lexer));
     Lex_Free(lexer);
-    Err_SetError(NULL);
 }
 
 void Test_LexerMulticharOperators(void) {

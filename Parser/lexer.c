@@ -9,6 +9,7 @@
 #include "misc.h"
 #include "token.h"
 #include "lexer.h"
+#include "Common/include/error.h"
 /**
  * @private
  */
@@ -54,6 +55,7 @@ lexer_t * Lex_New(char * buffer, size_t length, char * filename) {
         lexer->pos = pos;
         lexer->filename = filename;
         lexer->status = length != 0 ? LEX_OK : LEX_EOF;
+        lexer->error = NULL;
     } else {
         Err_Throw(Err_New("Cannot allocate lexer"));
     }
@@ -67,8 +69,10 @@ lexer_t * Lex_New(char * buffer, size_t length, char * filename) {
  * @param[in] lexer A pointer to the lexer to be freed
  */
 void Lex_Free(lexer_t * lexer) {
-    if (lexer) free(lexer);
-    else Err_Throw(Err_New("NULL pointer to lexer"));
+    if (lexer) {
+        if (lexer->error) Err_Free(lexer->error);
+        free(lexer);
+    } else Err_Throw(Err_New("NULL pointer to lexer"));
 }
 
 /**
@@ -254,7 +258,7 @@ static token_t * Lex_ParseSimpleToken(lexer_t * lexer) {
             char buf[256];
             lexer->status = LEX_ERROR;
             snprintf(buf, 256, "Unrecognized char '%c'", c);
-            Err_SetError(Err_NewWithLocation(buf, lexer->pos));
+            lexer->error = Err_NewWithLocation(buf, lexer->pos);
         }
     }
     return token;
@@ -282,7 +286,7 @@ static bool Lex_TryParseString(lexer_t * lexer) {
             fullmatch = true;
         } else {
             lexer->status = LEX_ERROR;
-            Err_SetError(Err_NewWithLocation("String not terminated", lexer->pos));
+            lexer->error = Err_NewWithLocation("String not terminated", lexer->pos);
         }
     }
     return fullmatch;
@@ -459,12 +463,20 @@ token_t * Lex_NextToken(lexer_t * lexer, bool preserve_whitespaces, bool preserv
  * @returns The current status of the lexer
  */
 lexer_status_t Lex_GetStatus(lexer_t * lexer) {
-    lexer_status_t status = LEX_ERROR;
-    
-    if (lexer) {
-        status = lexer->status;
-    } else {
-        Err_Throw(Err_New("NULL pointer to lexer"));
-    }
+    lexer_status_t status = LEX_OK;
+    if (lexer) status = lexer->status;
+    else Err_Throw(Err_New("NULL pointer to lexer"));
     return status;
+}
+
+/**
+ * Returns the error that the lexer encountered if any
+ * @retval NULL if no error
+ * @retval A pointer to an error if any
+ */
+error_t * Lex_GetError(lexer_t * lexer) {
+    error_t * error = NULL;
+    if (lexer) error = lexer->error;
+    else Err_Throw(Err_New("NULL pointer to lexer"));
+    return error;
 }

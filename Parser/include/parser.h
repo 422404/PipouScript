@@ -7,6 +7,12 @@
 #include "lexer.h"
 #include "vector.h"
 #include "ast.h"
+#include "Common/include/error.h"
+
+typedef enum {
+    PARSER_OK,
+    PARSER_ERROR = -1
+} parser_status_t;
 
 typedef struct {
     /**
@@ -29,16 +35,13 @@ typedef struct {
 
     /** Index in token list */
     size_t token_lookahead_index;
-} parser_t;
 
-typedef struct {
-    /** The parsed node if success */
-    ast_node_t * node;
+    /** Status of the parser */
+    parser_status_t status;
 
-    /** The error that occured if any */
+    /** Last error that occured if any */
     error_t * error;
-} parse_result_t;
-
+} parser_t;
 
 /**
  * Allocates a new parser
@@ -58,44 +61,57 @@ parser_t * Parser_New(char * buffer, size_t length, char * filename, bool module
 void Parser_Free(parser_t * parser);
 
 /**
+ * Returns the status of the parser
+ * @returns the status of the parser
+ */
+parser_status_t Parser_GetStatus(parser_t * parser);
+
+/**
+ * Returns the error that the parser encountered if any
+ * @retval NULL if no error
+ * @retval A pointer to an error if any
+ */
+error_t * Parser_GetError(parser_t * parser);
+
+/**
  * Parse the code and create the raw AST for it
  * @param[in] parser       The parser used to generate the AST
  * @param     module_scope Whether we parse a module
  * @returns          The AST root node
  */
-parse_result_t Parser_CreateAST(parser_t * parser, bool module_scope);
+ast_node_t * Parser_CreateAST(parser_t * parser, bool module_scope);
 
 /**
  * @param[in] parser
  * @param     directly Parse directly on the next token without skipping whitespaces
  *                     or comments 
  */
-parse_result_t Parser_ParseIdentifier(parser_t * parser, bool direct);
-parse_result_t Parser_ParseString(parser_t * parser);
-parse_result_t Parser_ParseInt(parser_t * parser);
-parse_result_t Parser_ParseDouble(parser_t * parser);
-parse_result_t Parser_ParseDecl(parser_t * parser);
-parse_result_t Parser_ParseAffect(parser_t * parser);
-parse_result_t Parser_ParseObjFieldInit(parser_t * parser);
-parse_result_t Parser_ParseObjMsgDef(parser_t * parser);
-parse_result_t Parser_ParseObjLitteral(parser_t * parser);
-parse_result_t Parser_ParseObjFieldName(parser_t * parser);
-parse_result_t Parser_ParseArrayLitteral(parser_t * parser);
-parse_result_t Parser_ParseBlock(parser_t * parser);
-parse_result_t Parser_ParseArrayAccess(parser_t * parser);
+ast_node_t * Parser_ParseIdentifier(parser_t * parser, bool direct);
+ast_node_t * Parser_ParseString(parser_t * parser);
+ast_node_t * Parser_ParseInt(parser_t * parser);
+ast_node_t * Parser_ParseDouble(parser_t * parser);
+ast_node_t * Parser_ParseDecl(parser_t * parser);
+ast_node_t * Parser_ParseAffect(parser_t * parser);
+ast_node_t * Parser_ParseObjFieldInit(parser_t * parser);
+ast_node_t * Parser_ParseObjMsgDef(parser_t * parser);
+ast_node_t * Parser_ParseObjLitteral(parser_t * parser);
+ast_node_t * Parser_ParseObjFieldName(parser_t * parser);
+ast_node_t * Parser_ParseArrayLitteral(parser_t * parser);
+ast_node_t * Parser_ParseBlock(parser_t * parser);
+ast_node_t * Parser_ParseArrayAccess(parser_t * parser);
 
 /**
  * @retval an ast_node_t<ast_dotted_expr_t> * if there is atleast 2 components (a.b or a[b])
  * @retval an ast_node_t<ast_identifier_t> * if only one component
  */
-parse_result_t Parser_ParseDottedExpr(parser_t * parser);
+ast_node_t * Parser_ParseDottedExpr(parser_t * parser);
 
 /**
  * @retval an ast_node_t<ast_msg_pass_expr_t> * if there is atleast 2 components (a b: "hello" or a b)
  * @retval an ast_node_t<T> * if only one component of type T
  */
-parse_result_t Parser_ParseMsgPassExpr(parser_t * parser);
-parse_result_t Parser_ParseExpr(parser_t * parser);
+ast_node_t * Parser_ParseMsgPassExpr(parser_t * parser);
+ast_node_t * Parser_ParseExpr(parser_t * parser);
 
 /**
  * @param[in] parser
@@ -103,8 +119,8 @@ parse_result_t Parser_ParseExpr(parser_t * parser);
  * @retval an ast_node_t<ast_expr_t> * if there is atleast 2 components (a <op of type> b)
  * @retval an ast_node_t<T> * if only one component of type T
  */
-parse_result_t Parser_ParseBinaryExpr(parser_t * parser, ast_node_type_t type);
-parse_result_t Parser_ParseUnaryExpr(parser_t * parser);
-parse_result_t Parser_ParseStatement(parser_t * parser, bool module_scope);
-parse_result_t Parser_ParseAtomExpr(parser_t * parser);
-parse_result_t Parser_ParseLitteralExpr(parser_t * parser);
+ast_node_t * Parser_ParseBinaryExpr(parser_t * parser, ast_node_type_t type);
+ast_node_t * Parser_ParseUnaryExpr(parser_t * parser);
+ast_node_t * Parser_ParseStatement(parser_t * parser, bool module_scope);
+ast_node_t * Parser_ParseAtomExpr(parser_t * parser);
+ast_node_t * Parser_ParseLitteralExpr(parser_t * parser);

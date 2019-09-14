@@ -59,8 +59,7 @@ static void Eval_PrintTokens(char * buffer, char * filename) {
             Token_Free(token);
         }
         if (Lex_GetStatus(lexer) == LEX_ERROR) {
-            Err_Print(Err_GetError());
-            Err_SetError(NULL);
+            Err_Print(Lex_GetError(lexer));
         }
     }
     Lex_Free(lexer);
@@ -73,18 +72,17 @@ static void Eval_PrintTokens(char * buffer, char * filename) {
  */
 static void Eval_PrintAST(char * buffer, char * filename) {
     parser_t * parser;
-    parse_result_t ast_root;
+    ast_node_t * ast_root;
 
     parser = Parser_New(buffer, strlen(buffer), filename, true);
     ast_root = Parser_CreateAST(parser, false);
-    if (ast_root.node) {
-        string * ast_string = ASTNode_ToString(ast_root.node);
+    if (ast_root) {
+        string * ast_string = ASTNode_ToString(ast_root);
         printf("\n%s\n", ast_string->c_str);
         Str_Free(ast_string);
-        ASTNode_Free(ast_root.node);
-    } else if (ast_root.error) {
-        Err_Print(ast_root.error);
-        Err_Free(ast_root.error);
+        ASTNode_Free(ast_root);
+    } else if (Parser_GetStatus(parser) == PARSER_ERROR) {
+        Err_Print(Parser_GetError(parser));
     }
     Parser_Free(parser);
 }

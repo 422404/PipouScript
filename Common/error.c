@@ -5,10 +5,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "error.h"
-
-/** Not thread-safe */
-static error_t * current_error = NULL;
+#include "Common/include/error.h"
 
 /**
  * Prints an error
@@ -32,24 +29,6 @@ void Err_Throw(error_t * error) {
     Err_Print(error);
     Err_Free(error);
     exit(-1);
-}
-
-/**
- * Sets the current reported error
- * If current error is not NULL it will be freed
- * @param[in] error The error to set
- */
-void Err_SetError(error_t * error) {
-    if (current_error) Err_Free(current_error);
-    current_error = error;
-}
-
-/**
- * Returns the current reported error
- * @returns The error
- */
-error_t * Err_GetError(void) {
-    return current_error;
 }
 
 /**
