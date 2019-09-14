@@ -152,8 +152,21 @@ error_t * Parser_GetError(parser_t * parser) {
  * @returns          The AST root node
  */
 ast_node_t * Parser_CreateAST(parser_t * parser, bool module_scope) {
-    /// @todo create ast root and parse all statements
-    return Parser_ParseStatement(parser, module_scope);
+    ast_node_t * node, * value;
+
+    node = ASTNode_New(NODE__ROOT_);
+
+    while ((value = Parser_ParseStatement(parser, module_scope))
+            && Parser_GetStatus(parser) == PARSER_OK) {
+        Vec_Append(node->as_root.statements, value);
+    }
+    
+    if (Parser_GetStatus(parser) == PARSER_ERROR) {
+        ASTNode_Free(node);
+        node = NULL;
+    }
+
+    return node;
 }
 
 ast_node_t * Parser_ParseIdentifier(parser_t * parser, bool directly) {
