@@ -1123,19 +1123,22 @@ ast_node_t * Parser_ParseUnaryExpr(parser_t * parser) {
             node->as_expr.op = tok->type;
             value = Parser_ParseAtomExpr(parser);
             if (!value) {
-                if (Parser_GetStatus(parser) == PARSER_OK) {
-                    nothing_to_parse = true;
+                if (!parser->error) {
+                    loc_t loc = Parser_CurrentLocation(parser);
+                    parser->error = Err_NewWithLocation(
+                            "Expected an expression after unary operator", loc);
+                    parser->status = PARSER_ERROR;
                 }
             } else {
                 Vec_Append(node->as_expr.values, value);
             }
         } else {
+            Parser_PushBackTokenList(parser);
             nothing_to_parse = true;
         }
     }
     
     if (!tok || Parser_GetStatus(parser) == PARSER_ERROR || nothing_to_parse) {
-        if (tok) Parser_PushBackTokenList(parser);
         ASTNode_Free(node);
         node = NULL;
     }
