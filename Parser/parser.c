@@ -369,48 +369,7 @@ ast_node_t * Parser_ParseBinaryExpr(parser_t * parser, ast_node_type_t type) {
             if (i > 0 && !parser->error) {
                 char buf[256];
                 loc_t loc = Parser_CurrentLocation(parser);
-                char * op_str;
-                switch (node->as_expr.op) {
-                    case TOKTYPE_PIPEPIPE:
-                        op_str = "||";
-                        break;
-                    case TOKTYPE_AMPAMP:
-                        op_str = "&&";
-                        break;
-                    case TOKTYPE_EQEQUAL:
-                        op_str = "==";
-                        break;
-                    case TOKTYPE_NOTEQUAL:
-                        op_str = "!=";
-                        break;
-                    case TOKTYPE_GEQUAL:
-                        op_str = ">=";
-                        break;
-                    case TOKTYPE_LEQUAL:
-                        op_str = "<=";
-                        break;
-                    case TOKTYPE_GREATER:
-                        op_str = ">";
-                        break;
-                    case TOKTYPE_LOWER:
-                        op_str = "<";
-                        break;
-                    case TOKTYPE_PLUS:
-                        op_str = "+";
-                        break;
-                    case TOKTYPE_MINUS:
-                        op_str = "-";
-                        break;
-                    case TOKTYPE_STAR:
-                        op_str = "*";
-                        break;
-                    case TOKTYPE_SLASH:
-                        op_str = "/";
-                        break;
-                    default:
-                        op_str = "<op error>";
-                        break;
-                }
+                char * op_str = Token_GetOperatorString(node->as_expr.op);
                 snprintf(buf, 256, "Expected an expression after '%s'", op_str);
                 parser->error = Err_NewWithLocation(buf, loc);
                 parser->status = PARSER_ERROR;

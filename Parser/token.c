@@ -73,3 +73,54 @@ char * Token_ToString(token_t * token) {
     }
     return string_buf;
 }
+
+/**
+ * Returns the string representation of an operator
+ * @param token_type Type of the operator token
+ * @returns          String representation of the token (do not free it)
+ */
+char * Token_GetOperatorString(token_type_t token_type) {
+    char * op_str;
+    switch (token_type) {
+        case TOKTYPE_PIPEPIPE:
+            op_str = "||";
+            break;
+        case TOKTYPE_AMPAMP:
+            op_str = "&&";
+            break;
+        case TOKTYPE_EQEQUAL:
+            op_str = "==";
+            break;
+        case TOKTYPE_NOTEQUAL:
+            op_str = "!=";
+            break;
+        case TOKTYPE_GEQUAL:
+            op_str = ">=";
+            break;
+        case TOKTYPE_LEQUAL:
+            op_str = "<=";
+            break;
+        case TOKTYPE_GREATER:
+            op_str = ">";
+            break;
+        case TOKTYPE_LOWER:
+            op_str = "<";
+            break;
+        case TOKTYPE_PLUS:
+            op_str = "+";
+            break;
+        case TOKTYPE_MINUS:
+            op_str = "-";
+            break;
+        case TOKTYPE_STAR:
+            op_str = "*";
+            break;
+        case TOKTYPE_SLASH:
+            op_str = "/";
+            break;
+        default:
+            op_str = NULL;
+            break;
+    }
+    return op_str;
+}

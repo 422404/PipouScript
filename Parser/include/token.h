@@ -53,3 +53,10 @@ void Token_Free(token_t * token);
  * @returns         The string representaton of the token
  */
 char * Token_ToString(token_t * token);
+
+/**
+ * Returns the string representation of an operator
+ * @param token_type Type of the operator token
+ * @returns          String representation of the token (do not free it)
+ */
+char * Token_GetOperatorString(token_type_t token_type);
