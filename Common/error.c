@@ -76,3 +76,43 @@ void Err_Free(error_t * error) {
     free(error->message);
     free(error);
 }
+
+/**
+ * Retrives the source code text on the line where an error occured
+ * @param  loc   The location of the error
+ * @param buffer The buffer that contains the source code
+ * @returns      An allocated string that contains the source code text
+ */
+char * Err_GetLineString(loc_t loc, char * buffer) {
+    size_t start_index, end_index, line;
+    size_t buffer_length = strlen(buffer);
+    char * str;
+    
+    // skip the n - 1 first lines
+    for (start_index = 0, line = 1; start_index < buffer_length 
+            && line < loc.line; start_index++) {
+        if (buffer[start_index] == '\n'
+                || buffer[start_index] == '\r') {
+            line++;
+            // if a CR is found we may have a LF following
+            // skip the next char if it's the case
+            if (buffer[start_index] == '\r'
+                    && start_index + 1 < buffer_length
+                    && buffer[start_index + 1] == '\n') {
+                start_index++;
+            }
+        }
+    }
+
+    // find the end of the line
+    for (end_index = start_index; end_index < buffer_length
+            && buffer[end_index] != '\n' && buffer[end_index] != '\r';
+            end_index++);
+
+    // extract the line
+    str = (char *)calloc(1, end_index - start_index + 1);
+    if (str) {
+        memcpy(str, &buffer[start_index], end_index - start_index);
+    }
+    return str;
+}

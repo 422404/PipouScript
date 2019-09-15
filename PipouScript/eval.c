@@ -59,7 +59,13 @@ static void Eval_PrintTokens(char * buffer, char * filename) {
             Token_Free(token);
         }
         if (Lex_GetStatus(lexer) == LEX_ERROR) {
-            Err_Print(Lex_GetError(lexer));
+            error_t * error = Lex_GetError(lexer);
+            Err_Print(error);
+            if (error->with_location) {
+                char * line = Err_GetLineString(error->location, buffer);
+                printf("%s\n", line);
+                free(line);
+            }
         }
     }
     Lex_Free(lexer);
@@ -82,7 +88,13 @@ static void Eval_PrintAST(char * buffer, char * filename) {
         Str_Free(ast_string);
         ASTNode_Free(ast_root);
     } else if (Parser_GetStatus(parser) == PARSER_ERROR) {
-        Err_Print(Parser_GetError(parser));
+        error_t * error = Parser_GetError(parser);
+        Err_Print(error);
+        if (error->with_location) {
+            char * line = Err_GetLineString(error->location, buffer);
+            printf("%s\n", line);
+            free(line);
+        }
     }
     Parser_Free(parser);
 }
@@ -114,7 +126,7 @@ int Eval_REPL() {
                 perror("[REPL] ");
                 return -1;
             }
-        } else if (line_length > 0) {
+        } else if (line_length > 1) {
             repl_cmd_type_t cmd = REPL_IsCommand(line);
             if (cmd == REPL_CMD_NONE) {
                 /// @todo only when some flag is set

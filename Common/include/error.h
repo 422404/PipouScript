@@ -50,3 +50,11 @@ error_t * Err_NewWithLocation(char * message, loc_t location);
  * @param[in] error The error to free
  */
 void Err_Free(error_t * error);
+
+/**
+ * Retrives the source code text on the line where an error occured
+ * @param  loc   The location of the error
+ * @param buffer The buffer that contains the source code
+ * @returns      An allocated string that contains the source code text
+ */
+char * Err_GetLineString(loc_t loc, char * buffer);
