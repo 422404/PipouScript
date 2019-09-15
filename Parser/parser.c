@@ -113,8 +113,12 @@ parser_t * Parser_New(char * buffer, size_t length, char * filename, bool module
  */
 void Parser_Free(parser_t * parser) {
     if (parser) {
+        if (parser->error 
+                && parser->error != Lex_GetError(parser->lexer)) {
+            /// @todo clone error ?
+            Err_Free(parser->error);
+        }
         if (parser->lexer) Lex_Free(parser->lexer);
-        if (parser->error) Err_Free(parser->error);
         Parser_ConsumeLookahead(parser);
         Vec_Free(parser->token_lookahead);
         free(parser);
