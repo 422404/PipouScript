@@ -8,6 +8,7 @@
 #include "lexer_tests.h"
 #include "parser_tests.h"
 #include "str_tests.h"
+#include "hashmap_tests.h"
 
 /**
  * Runs all tests
@@ -18,6 +19,7 @@ void Test_AllTests(void) {
     Test_LexerTests();
     Test_ParserTests();
     Test_StringTests();
+    Test_HashMapTests();
 }
 
 /**
