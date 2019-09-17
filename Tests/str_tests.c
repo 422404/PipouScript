@@ -20,5 +20,7 @@ void Test_AppendTest(void) {
 }
 
 void Test_StringTests(void) {
+    test_fixture_start();
     run_test(Test_AppendTest);
+    test_fixture_end();
 }

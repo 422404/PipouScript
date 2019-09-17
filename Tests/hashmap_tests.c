@@ -66,6 +66,8 @@ void Test_Remove(void) {
  * Runs all HashMap tests
  */
 void Test_HashMapTests(void) {
+    test_fixture_start();
     run_test(Test_SetGet);
     run_test(Test_Remove);
+    test_fixture_end();
 }

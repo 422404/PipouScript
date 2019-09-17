@@ -1323,6 +1323,7 @@ void Test_ParseObjLitteral(void) {
  * Runs all the parser tests
  */
 void Test_ParserTests(void) {
+    test_fixture_start();
     run_test(Test_ParseSimpleLitterals);
     run_test(Test_PushBackTokenList);
     run_test(Test_ParseObjFieldName);
@@ -1341,4 +1342,5 @@ void Test_ParserTests(void) {
     run_test(Test_ParseObjMsgDef);
     run_test(Test_ParseObjFieldInit);
     run_test(Test_ParseObjLitteral);
+    test_fixture_end();
 }
