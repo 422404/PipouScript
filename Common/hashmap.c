@@ -60,6 +60,7 @@ static void HashMap_Grow(hashmap_t * hashmap) {
 
     hashmap->entries = new_entries;
     hashmap->entries_count = new_entries_count;
+    hashmap->count = 0;
 
     for (size_t i = 0; i < old_entries_count; i++) {
         if (old_entries[i]) {
@@ -143,7 +144,7 @@ void HashMap_Set(hashmap_t * hashmap, char * key, void * value) {
     bool got_entries = false, found = false;
     hashmap_entry_t * cur, * entry;
 
-    if (!HashMap_OptimalSize(hashmap->count, hashmap->entries_count)) {
+    if (!HashMap_OptimalSize(hashmap->count + 1, hashmap->entries_count)) {
         HashMap_Grow(hashmap);
     }
     size_t index = HashMap_HashString(key) % hashmap->entries_count;
