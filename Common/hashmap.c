@@ -1,6 +1,6 @@
 /**
  * @file hashmap.c
- * Hash map implementation
+ * Hash map implementation using NaN-boxing
  */
 #include <sys/types.h>
 #include <stddef.h>
@@ -9,13 +9,14 @@
 #include <stdio.h>
 #include "hashmap.h"
 #include "Common/include/error.h"
+#include "nanbox.h"
 
 #define DEFAULT_INITIAL_CAPACITY 16
 #define LOAD_FACTOR 0.75
 
 /********************** HashMapEntry Functions ******************************/
 
-static hashmap_entry_t * HashMapEntry_New(char * key, void * value) {
+static hashmap_entry_t * HashMapEntry_New(char * key, nanbox_t value) {
     hashmap_entry_t * entry = (hashmap_entry_t *)malloc(sizeof(hashmap_entry_t));
     if (entry) {
         entry->key = key;
@@ -118,13 +119,9 @@ void HashMap_Free(hashmap_t * hashmap) {
 /**
  * @param[in]  hashmap The hashmap to work on
  * @param[in]  key     The key of the (key, val) pair
- * @param[out] value   The value stored
- *                     Please note that if using values other than pointers
- *                     the pointer provided must point to memory aligned
- *                     to the size of a pointer
- * @returns            Whether the lookup was successful
+ * @param[out] value   The stored value
  */
-bool HashMap_Get(hashmap_t * hashmap, char * key, void ** value) {
+bool HashMap_Get(hashmap_t * hashmap, char * key, nanbox_t * value) {
     bool found = false;
     size_t index = HashMap_HashString(key) % hashmap->entries_count;
     hashmap_entry_t * entry = hashmap->entries[index];
@@ -140,7 +137,12 @@ bool HashMap_Get(hashmap_t * hashmap, char * key, void ** value) {
     return found;
 }
 
-void HashMap_Set(hashmap_t * hashmap, char * key, void * value) {
+/**
+ * @param[in] hashmap The hashmap to work on
+ * @param[in] key     The key of the (key, val) pair
+ * @param     value   The value to store
+ */
+void HashMap_Set(hashmap_t * hashmap, char * key, nanbox_t value) {
     bool got_entries = false, found = false;
     hashmap_entry_t * cur, * entry;
 
@@ -194,7 +196,34 @@ void HashMap_Remove(hashmap_t * hashmap, char * key) {
     }
 }
 
+/**
+ * Checks if a (key, val) pair is present in a hashmap
+ * @param[in] hashmap The hashmap to work on
+ * @param[in] key     The key of the (key, val) pair
+ * @returns           Whether the (key, val) pair is present
+ */
 bool HashMap_Contains(hashmap_t * hashmap, char * key) {
-    void * tmp;
+    nanbox_t tmp;
     return HashMap_Get(hashmap, key, &tmp);
+}
+
+/**
+ * Returns a vector with all the entries of a hashmap
+ * @param[in] hashmap The hashmap to work on
+ * @returns           The entries list
+ */
+vector_t * HashMap_GetValues(hashmap_t * hashmap) {
+    hashmap_entry_t  * next;
+    vector_t * vec = Vec_New();
+
+    for (size_t i = 0; i < hashmap->entries_count; i++) {
+        if (hashmap->entries[i]) {
+            next = hashmap->entries[i];
+            while (next) {
+                Vec_Append(vec, &next->value);
+                next = next->next;
+            }
+        }
+    }
+    return vec;
 }

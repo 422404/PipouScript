@@ -1,16 +1,18 @@
 /**
  * @file hashmap.h
- * Hash map implementation
+ * Hash map implementation using NaN-boxing
  */
 #pragma once
 #include <sys/types.h>
 #include <stdbool.h>
+#include "nanbox.h"
+#include "vector.h"
 
 typedef struct hashmap_entry_s hashmap_entry_t;
 
 typedef struct hashmap_entry_s {
     char * key;
-    void * value;
+    nanbox_t value;
     /** Next entry in case of key hash collision */
     hashmap_entry_t * next;
 } hashmap_entry_t;
@@ -48,23 +50,16 @@ void HashMap_Free(hashmap_t * hashmap);
 /**
  * @param[in]  hashmap The hashmap to work on
  * @param[in]  key     The key of the (key, val) pair
- * @param[out] value   The value stored
- *                     Please note that if using values other than pointers
- *                     the pointer provided must point to memory aligned
- *                     to the size of a pointer
- * @returns            Whether the lookup was successful
+ * @param[out] value   The stored value
  */
-bool HashMap_Get(hashmap_t * hashmap, char * key, void ** value);
+bool HashMap_Get(hashmap_t * hashmap, char * key, nanbox_t * value);
 
 /**
  * @param[in] hashmap The hashmap to work on
  * @param[in] key     The key of the (key, val) pair
- * @param[in] value   The value to store
- *                    Please note that anything other than a pointer
- *                    can be stored but take great care when using
- *                    HashMap_Get()
+ * @param     value   The value to store
  */
-void HashMap_Set(hashmap_t * hashmap, char * key, void * value);
+void HashMap_Set(hashmap_t * hashmap, char * key, nanbox_t value);
 
 /**
  * Removes a (key, value) pair from a hashmap
@@ -80,3 +75,10 @@ void HashMap_Remove(hashmap_t * hashmap, char * key);
  * @returns           Whether the (key, val) pair is present
  */
 bool HashMap_Contains(hashmap_t * hashmap, char * key);
+
+/**
+ * Returns a vector with all the entries of a hashmap
+ * @param[in] hashmap The hashmap to work on
+ * @returns           The entries list
+ */
+vector_t * HashMap_GetValues(hashmap_t * hashmap);
