@@ -4,7 +4,7 @@
 
 TARGET   := pipou
 VERSION  := 1.0.0
-DIRS     := PipouScript Parser Common
+DIRS     := PipouScript Parser Common Objects
 BUILD    := $(CURDIR)/Build
 
 ###############################################################################

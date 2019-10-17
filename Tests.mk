@@ -4,7 +4,7 @@
 
 TARGET   := pipou-tests
 VERSION  := 1.0.0
-DIRS     := PipouScript Parser Common Tests
+DIRS     := PipouScript Parser Common Objects Tests
 BUILD    := $(CURDIR)/Build
 MAIN     := $(CURDIR)/PipouScript/main.c
 

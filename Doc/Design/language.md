@@ -41,7 +41,7 @@ myBlock := {
     5 + 2 // no ";" at the end of the line means "return <expression>"
 };
 
-blockWithArgs := { a b c |
+blockWithArgs := { | a b c |
     ...
 };
 ```
@@ -140,7 +140,7 @@ mod import: "myProgram.hello.World";
 function := {
     {
         ...
-    } on: Exception do: { e |
+    } on: Exception do: { | e |
         ...
     } finally: {
         ...
