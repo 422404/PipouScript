@@ -1,0 +1,34 @@
+- /!\ DOCUMENTATION /!\
+
+- Better error handling
+  --> Print state of current VM thread on exception
+  --> Think about raising exception on method/block objects instead of terminating process
+  --> Implement Thread Local Storage
+        --> current exception ptr
+
+- a.#set:to --> a.set:to
+
+- nanbox_t Object_Clone(nanbox_t object)
+- nanbox_t Object_Keys(nanbox_t object) <-- returns an ARRAY_OBJECT
+
+- vec_t HashMap_Keys(hashmap_t * hashmap) <-- TESTS
+
+invokationContext = Args + Scopes + Execution context
+    nanbox_t InvokationContext_GetArg(nanbox_t context, char * name)
+    nanbox_t InvokationContext_GetVar(nanbox_t context, char * name)
+    nanbox_t InvokationContext_GetCaller(nanbox_t context)
+    nanbox_t InvokationContext_Raise(nanbox_t context, nanbox_t error)
+    nanbox_t InvokationContext_GetRaisedError(nanbox_t context)
+    bool     InvokationContext_HasRaised(nanbox_t context)
+
+- Image based system ?
+    --> if so:
+        - ability to browse objects
+        - objects owns a creation timestamp
+        Ex:
+            ((Objects select) whereCreationDateEquals: "1970/01/01") printAll;
+            ((Objects select) where: "abcd" equals: {a: 1, b: true}) openInUI;
+    
+    --> Input history
+        - Rollback to specific input
+        - Print full session to file
