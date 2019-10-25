@@ -82,3 +82,10 @@ bool HashMap_Contains(hashmap_t * hashmap, char * key);
  * @returns           The entries list
  */
 vector_t * HashMap_GetValues(hashmap_t * hashmap);
+
+/**
+ * Returns a vector with all the keys of a hashmap
+ * @param[in] hashmap The hashmap to work on
+ * @returns           The keys list
+ */
+vector_t * HashMap_GetKeys(hashmap_t * hashmap);

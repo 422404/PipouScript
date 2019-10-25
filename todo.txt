@@ -11,8 +11,6 @@
 - nanbox_t Object_Clone(nanbox_t object)
 - nanbox_t Object_Keys(nanbox_t object) <-- returns an ARRAY_OBJECT
 
-- vec_t HashMap_Keys(hashmap_t * hashmap) <-- TESTS
-
 invokationContext = Args + Scopes + Execution context
     nanbox_t InvokationContext_GetArg(nanbox_t context, char * name)
     nanbox_t InvokationContext_GetVar(nanbox_t context, char * name)

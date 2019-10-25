@@ -227,3 +227,24 @@ vector_t * HashMap_GetValues(hashmap_t * hashmap) {
     }
     return vec;
 }
+
+/**
+ * Returns a vector with all the keys of a hashmap
+ * @param[in] hashmap The hashmap to work on
+ * @returns           The keys list
+ */
+vector_t * HashMap_GetKeys(hashmap_t * hashmap) {
+    hashmap_entry_t  * next;
+    vector_t * vec = Vec_New();
+
+    for (size_t i = 0; i < hashmap->entries_count; i++) {
+        if (hashmap->entries[i]) {
+            next = hashmap->entries[i];
+            while (next) {
+                Vec_Append(vec, strdup(next->key));
+                next = next->next;
+            }
+        }
+    }
+    return vec;
+}

@@ -2,6 +2,7 @@
  * @file hashmap_tests.c
  * HashMap tests
  */
+#include <stdlib.h>
 #include "seatest.h"
 #include "hashmap.h"
 #include "nanbox.h"
@@ -105,18 +106,22 @@ void Test_Remove(void) {
     HashMap_Free(hashmap);
 }
 
-void Test_GetValues(void) {
+void Test_GetValuesAndKeys(void) {
     hashmap_t * hashmap;
-    vector_t * vector;
+    vector_t * values, * keys;
 
     hashmap = HashMap_New();
     assert_true(hashmap != NULL);
     HashMap_Set(hashmap, "abcd", nanbox_from_int(1337));
     HashMap_Set(hashmap, "efgh", nanbox_from_int(1234));
     HashMap_Set(hashmap, "ijkl", nanbox_from_double(13.37));
-    vector = HashMap_GetValues(hashmap);
-    assert_int_equal(3, Vec_GetLength(vector));
-    Vec_Free(vector);
+    values = HashMap_GetValues(hashmap);
+    assert_int_equal(3, Vec_GetLength(values));
+    Vec_Free(values);
+    keys = HashMap_GetKeys(hashmap);
+    assert_int_equal(3, Vec_GetLength(keys));
+    Vec_ForEach(keys, free);
+    Vec_Free(keys);
     HashMap_Free(hashmap);
 }
 
@@ -127,6 +132,6 @@ void Test_HashMapTests(void) {
     test_fixture_start();
     run_test(Test_SetGet);
     run_test(Test_Remove);
-    run_test(Test_GetValues);
+    run_test(Test_GetValuesAndKeys);
     test_fixture_end();
 }
