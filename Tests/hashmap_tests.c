@@ -8,6 +8,12 @@
 #include "nanbox.h"
 #include "vector.h"
 
+static void FreeHashMapValues(nanbox_t value) {
+    if (nanbox_is_pointer(value)) {
+        free(nanbox_to_pointer(value));
+    }
+}
+
 static void Test_SetGet(void) {
     hashmap_t * hashmap;
     nanbox_t a, b;
@@ -120,7 +126,7 @@ void Test_GetValuesAndKeys(void) {
     Vec_Free(values);
     keys = HashMap_GetKeys(hashmap);
     assert_int_equal(3, Vec_GetLength(keys));
-    Vec_ForEach(keys, free);
+    Vec_ForEach(keys, FreeHashMapValues);
     Vec_Free(keys);
     HashMap_Free(hashmap);
 }

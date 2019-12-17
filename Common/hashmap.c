@@ -210,7 +210,7 @@ bool HashMap_Contains(hashmap_t * hashmap, char * key) {
 /**
  * Returns a vector with all the entries of a hashmap
  * @param[in] hashmap The hashmap to work on
- * @returns           The entries list
+ * @returns           The entries list (vector_t<nanbox_t>)
  */
 vector_t * HashMap_GetValues(hashmap_t * hashmap) {
     hashmap_entry_t  * next;
@@ -220,7 +220,7 @@ vector_t * HashMap_GetValues(hashmap_t * hashmap) {
         if (hashmap->entries[i]) {
             next = hashmap->entries[i];
             while (next) {
-                Vec_Append(vec, &next->value);
+                Vec_Append(vec, next->value);
                 next = next->next;
             }
         }
@@ -231,7 +231,7 @@ vector_t * HashMap_GetValues(hashmap_t * hashmap) {
 /**
  * Returns a vector with all the keys of a hashmap
  * @param[in] hashmap The hashmap to work on
- * @returns           The keys list
+ * @returns           The keys list (vector_t<nanbox_t>)
  */
 vector_t * HashMap_GetKeys(hashmap_t * hashmap) {
     hashmap_entry_t  * next;
@@ -241,7 +241,7 @@ vector_t * HashMap_GetKeys(hashmap_t * hashmap) {
         if (hashmap->entries[i]) {
             next = hashmap->entries[i];
             while (next) {
-                Vec_Append(vec, strdup(next->key));
+                Vec_Append(vec, nanbox_from_pointer(strdup(next->key)));
                 next = next->next;
             }
         }

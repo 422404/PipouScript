@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include "nanbox.h"
 #include "error.h"
 #include "vector.h"
 
@@ -42,7 +43,7 @@ static bool Vec_MustGrow(vector_t * vector) {
 static void Vec_Grow(vector_t * vector) {
     void * buf;
     size_t new_length = vector->max_length + vector->increment_length;
-    buf = realloc(vector->buffer, new_length * sizeof(void *));
+    buf = realloc(vector->buffer, new_length * sizeof(nanbox_t));
     if (buf) {
         vector->buffer = buf;
         vector->max_length = new_length;
@@ -94,10 +95,10 @@ void Vec_Free(vector_t * vector) {
  * @param[in] vector A pointer to the vector
  * @param     index  The index of the element in the vector
  * @retval The stored element
- * @retval NULL in case of an error (or if NULL was stored...)
+ * @retval nanbox_null() in case of an error (or if nanbox_null() was stored...)
  */
-void * Vec_GetAt(vector_t * vector, size_t index) {
-    void * elem = NULL;
+nanbox_t Vec_GetAt(vector_t * vector, size_t index) {
+    nanbox_t elem = nanbox_null();
 
     if (vector && Vec_InBounds(vector, index)) {
         elem = vector->buffer[index];
@@ -111,7 +112,7 @@ void * Vec_GetAt(vector_t * vector, size_t index) {
  * @param     index  The index of the element in the vector
  * @param[in] elem   The element to be stored
  */
-void Vec_SetAt(vector_t * vector, size_t index, void * elem) {
+void Vec_SetAt(vector_t * vector, size_t index, nanbox_t elem) {
     if (vector && Vec_InBounds(vector, index)) {
         vector->buffer[index] = elem;
     }
@@ -122,7 +123,7 @@ void Vec_SetAt(vector_t * vector, size_t index, void * elem) {
  * @param[in] vector A pointer to the vector
  * @param[in] elem   The element to be stored
  */
-void Vec_Append(vector_t * vector, void * elem) {
+void Vec_Append(vector_t * vector, nanbox_t elem) {
     if (Vec_MustGrow(vector)) Vec_Grow(vector);
     vector->buffer[vector->length] = elem;
     vector->length++;
@@ -133,8 +134,8 @@ void Vec_Append(vector_t * vector, void * elem) {
  * @param[in] vector A pointer to the vector
  * @returns          The poped element
  */
-void * Vec_Pop(vector_t * vector) {
-    void * elem = NULL;
+nanbox_t Vec_Pop(vector_t * vector) {
+    nanbox_t elem = nanbox_null();
 
     if (vector->length > 0) {
         vector->length--;
@@ -167,7 +168,7 @@ size_t Vec_GetMaxLength(vector_t * vector) {
  * @param[in] vector A pointer to the vector
  * @param[in] func   The function to use
  */
-void Vec_Map(vector_t * vector, void * (*func)(void *)) {
+void Vec_Map(vector_t * vector, nanbox_t (*func)(nanbox_t)) {
     for (size_t i = 0; i < vector->length; i++) {
         Vec_SetAt(vector, i, func(Vec_GetAt(vector, i)));
     }
@@ -178,7 +179,7 @@ void Vec_Map(vector_t * vector, void * (*func)(void *)) {
  * @param[in] vector A pointer to the vector
  * @param[in] func   The function to use
  */
-void Vec_ForEach(vector_t * vector, void (*func)(void *)) {
+void Vec_ForEach(vector_t * vector, void (*func)(nanbox_t)) {
     for (size_t i = 0; i < vector->length; i++) {
         func(Vec_GetAt(vector, i));
     }

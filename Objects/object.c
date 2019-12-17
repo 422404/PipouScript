@@ -38,9 +38,9 @@ void Object_Free(nanbox_t * object) {
         nanbox_t proto = Object_GetPrototype(*object);
 
         for (size_t i = 0; i < Vec_GetLength(fields); i++) {
-            nanbox_t * field = Vec_GetAt(fields, i);
-            if (nanbox_is_pointer(*field)) {
-                Object_DecRef(field);
+            nanbox_t field = Vec_GetAt(fields, i);
+            if (nanbox_is_pointer(field)) {
+                Object_DecRef(&field);
             }
         }
         if (nanbox_is_pointer(proto)) {

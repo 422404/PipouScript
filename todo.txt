@@ -8,25 +8,44 @@
 
 - a.#set:to --> a.set:to
 
+- Track every objects for deallocation on exit
+
+- Implement Arrays !!!
+
 - nanbox_t Object_Clone(nanbox_t object)
 - nanbox_t Object_Keys(nanbox_t object) <-- returns an ARRAY_OBJECT
+- nanbox_t Object_SendMessage(nanbox_t object, nanbox_t message)
+- nanbox_t Object_SendMessageWithArgs(nanbox_t object, nanbox_t message, nanbox_t args)
 
-invokationContext = Args + Scopes + Execution context
-    nanbox_t InvokationContext_GetArg(nanbox_t context, char * name)
-    nanbox_t InvokationContext_GetVar(nanbox_t context, char * name)
-    nanbox_t InvokationContext_GetCaller(nanbox_t context)
-    nanbox_t InvokationContext_Raise(nanbox_t context, nanbox_t error)
-    nanbox_t InvokationContext_GetRaisedError(nanbox_t context)
-    bool     InvokationContext_HasRaised(nanbox_t context)
+typedef struct {
+    nanbox_t current_context;
+    pid_t TID;
+} thread_state_t;
 
-- Image based system ?
-    --> if so:
-        - ability to browse objects
-        - objects owns a creation timestamp
-        Ex:
-            ((Objects select) whereCreationDateEquals: "1970/01/01") printAll;
-            ((Objects select) where: "abcd" equals: {a: 1, b: true}) openInUI;
-    
-    --> Input history
-        - Rollback to specific input
-        - Print full session to file
+typedef struct {
+    pid_t TID;
+    thread_state_t * thread_state;
+} thread_list_t;
+
+thread_state_t * ThreadState_New();
+void             ThreadState_Free(thread_state_t * thread_state)
+thread_state_t * ThreadState_Current();
+
+typedef struct {
+    thread_list_t * threads;
+    nanbox_t objects_root;
+} interpreter_state_t;
+
+interpreter_state_t * InterpreterState_New();
+void                  InterpreterState_Free(interpreter_state_t * interpreter_state);
+
+Object:
+    - Freeze the object (done)
+    - Add/Remove a prototype (done)
+    - Access fields (done)
+    - Send a message to it
+
+Message:
+    myObject set: "hello" to: true
+    myObject __send__: ((Message clone) setSelector: "set:to") withArgs: ["hello", true]
+    ((Message clone) setSelector: "set:to") sendTo: myObject withArgs: ["hello", true]

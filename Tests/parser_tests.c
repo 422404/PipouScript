@@ -180,7 +180,7 @@ void Test_ParseObjFieldName(void) {
     assert_int_equal(NODE_OBJ_FIELD_NAME, node->type);
     assert_false(node->as_obj_field_name.is_msg_name);
     assert_int_equal(1, Vec_GetLength(node->as_obj_field_name.components));
-    ident = Vec_GetAt(node->as_obj_field_name.components, 0);
+    ident = nanbox_to_pointer(Vec_GetAt(node->as_obj_field_name.components, 0));
     assert_int_equal(NODE_IDENTIFIER, ident->type);
     assert_string_equal("abcd", ident->as_ident.value);
     ASTNode_Free(node);
@@ -194,7 +194,7 @@ void Test_ParseObjFieldName(void) {
     assert_int_equal(NODE_OBJ_FIELD_NAME, node->type);
     assert_true(node->as_obj_field_name.is_msg_name);
     assert_int_equal(1, Vec_GetLength(node->as_obj_field_name.components));
-    ident = Vec_GetAt(node->as_obj_field_name.components, 0);
+    ident = nanbox_to_pointer(Vec_GetAt(node->as_obj_field_name.components, 0));
     assert_int_equal(NODE_IDENTIFIER, ident->type);
     assert_string_equal("abcd", ident->as_ident.value);
     ASTNode_Free(node);
@@ -210,7 +210,7 @@ void Test_ParseObjFieldName(void) {
     assert_int_equal(4, Vec_GetLength(node->as_obj_field_name.components));
     char * param_names[] = {"a", "b", "c", "d"};
     for (size_t i = 0; i < 4; i++) {
-        ident = Vec_GetAt(node->as_obj_field_name.components, i);
+        ident = nanbox_to_pointer(Vec_GetAt(node->as_obj_field_name.components, i));
         assert_int_equal(NODE_IDENTIFIER, ident->type);
         assert_string_equal(param_names[i], ident->as_ident.value);
     }
@@ -333,7 +333,7 @@ void Test_ParseDottedExpr(void) {
         ast_node_t * node2;
         ast_node_type_t types[] = {NODE_IDENTIFIER, NODE_OBJ_FIELD_NAME};
         for (size_t i = 0; i < 2; i++) {
-            node2 = Vec_GetAt(node->as_dotted_expr.components, i);
+            node2 = nanbox_to_pointer(Vec_GetAt(node->as_dotted_expr.components, i));
             assert_int_equal(types[i], node2->type);
         }
         printf("\n");
@@ -351,7 +351,7 @@ void Test_ParseDottedExpr(void) {
         ast_node_t * node2;
         ast_node_type_t types[] = {NODE_IDENTIFIER, NODE_ARRAY_ACCESS};
         for (size_t i = 0; i < 2; i++) {
-            node2 = Vec_GetAt(node->as_dotted_expr.components, i);
+            node2 = nanbox_to_pointer(Vec_GetAt(node->as_dotted_expr.components, i));
             assert_int_equal(types[i], node2->type);
         }
     }
@@ -368,7 +368,7 @@ void Test_ParseDottedExpr(void) {
         ast_node_t * node2;
         ast_node_type_t types[] = {NODE_IDENTIFIER, NODE_OBJ_FIELD_NAME};
         for (size_t i = 0; i < 2; i++) {
-            node2 = Vec_GetAt(node->as_dotted_expr.components, i);
+            node2 = nanbox_to_pointer(Vec_GetAt(node->as_dotted_expr.components, i));
             assert_int_equal(types[i], node2->type);
         }
     }
@@ -385,7 +385,7 @@ void Test_ParseDottedExpr(void) {
         ast_node_t * node2;
         ast_node_type_t types[] = {NODE_IDENTIFIER, NODE_OBJ_FIELD_NAME, NODE_OBJ_FIELD_NAME};
         for (size_t i = 0; i < 3; i++) {
-            node2 = Vec_GetAt(node->as_dotted_expr.components, i);
+            node2 = nanbox_to_pointer(Vec_GetAt(node->as_dotted_expr.components, i));
             assert_int_equal(types[i], node2->type);
         }
     }
@@ -402,7 +402,7 @@ void Test_ParseDottedExpr(void) {
         ast_node_t * node2;
         ast_node_type_t types[] = {NODE_IDENTIFIER, NODE_ARRAY_ACCESS, NODE_OBJ_FIELD_NAME};
         for (size_t i = 0; i < 3; i++) {
-            node2 = Vec_GetAt(node->as_dotted_expr.components, i);
+            node2 = nanbox_to_pointer(Vec_GetAt(node->as_dotted_expr.components, i));
             assert_int_equal(types[i], node2->type);
         }
     }
@@ -419,7 +419,7 @@ void Test_ParseDottedExpr(void) {
         ast_node_t * node2;
         ast_node_type_t types[] = {NODE_IDENTIFIER, NODE_ARRAY_ACCESS, NODE_OBJ_FIELD_NAME, NODE_ARRAY_ACCESS};
         for (size_t i = 0; i < 4; i++) {
-            node2 = Vec_GetAt(node->as_dotted_expr.components, i);
+            node2 = nanbox_to_pointer(Vec_GetAt(node->as_dotted_expr.components, i));
             assert_int_equal(types[i], node2->type);
         }
     }
@@ -436,7 +436,7 @@ void Test_ParseDottedExpr(void) {
         ast_node_t * node2;
         ast_node_type_t types[] = {NODE_IDENTIFIER, NODE_ARRAY_ACCESS, NODE_ARRAY_ACCESS};
         for (size_t i = 0; i < 3; i++) {
-            node2 = Vec_GetAt(node->as_dotted_expr.components, i);
+            node2 = nanbox_to_pointer(Vec_GetAt(node->as_dotted_expr.components, i));
             assert_int_equal(types[i], node2->type);
         }
     }
@@ -453,7 +453,7 @@ void Test_ParseDottedExpr(void) {
         ast_node_t * node2;
         ast_node_type_t types[] = {NODE_IDENTIFIER, NODE_ARRAY_ACCESS, NODE_ARRAY_ACCESS, NODE_OBJ_FIELD_NAME};
         for (size_t i = 0; i < 4; i++) {
-            node2 = Vec_GetAt(node->as_dotted_expr.components, i);
+            node2 = nanbox_to_pointer(Vec_GetAt(node->as_dotted_expr.components, i));
             assert_int_equal(types[i], node2->type);
         }
     }
@@ -470,7 +470,7 @@ void Test_ParseDottedExpr(void) {
         ast_node_t * node2;
         ast_node_type_t types[] = {NODE_IDENTIFIER, NODE_ARRAY_ACCESS, NODE_OBJ_FIELD_NAME, NODE_ARRAY_ACCESS, NODE_ARRAY_ACCESS};
         for (size_t i = 0; i < 5; i++) {
-            node2 = Vec_GetAt(node->as_dotted_expr.components, i);
+            node2 = nanbox_to_pointer(Vec_GetAt(node->as_dotted_expr.components, i));
             assert_int_equal(types[i], node2->type);
         }
     }
@@ -640,7 +640,7 @@ void Test_ParseBinaryExpr(void) {
     assert_int_equal(TOKTYPE_PIPEPIPE, node->as_expr.op);
     assert_int_equal(2, Vec_GetLength(node->as_expr.values));
     for (size_t i = 0; i < 2; i++) {
-        val = Vec_GetAt(node->as_expr.values, i);
+        val = nanbox_to_pointer(Vec_GetAt(node->as_expr.values, i));
         assert_int_equal(NODE_IDENTIFIER, val->type);
     }
     ASTNode_Free(node);
@@ -655,7 +655,7 @@ void Test_ParseBinaryExpr(void) {
     assert_int_equal(TOKTYPE_PIPEPIPE, node->as_expr.op);
     assert_int_equal(3, Vec_GetLength(node->as_expr.values));
     for (size_t i = 0; i < 3; i++) {
-        val = Vec_GetAt(node->as_expr.values, i);
+        val = nanbox_to_pointer(Vec_GetAt(node->as_expr.values, i));
         assert_int_equal(NODE_IDENTIFIER, val->type);
     }
     ASTNode_Free(node);
@@ -670,7 +670,7 @@ void Test_ParseBinaryExpr(void) {
     assert_int_equal(TOKTYPE_AMPAMP, node->as_expr.op);
     assert_int_equal(2, Vec_GetLength(node->as_expr.values));
     for (size_t i = 0; i < 2; i++) {
-        val = Vec_GetAt(node->as_expr.values, i);
+        val = nanbox_to_pointer(Vec_GetAt(node->as_expr.values, i));
         assert_int_equal(NODE_IDENTIFIER, val->type);
     }
     ASTNode_Free(node);
@@ -688,11 +688,11 @@ void Test_ParseBinaryExpr(void) {
         ast_node_type_t types[] = {NODE_AND_EXPR, NODE_IDENTIFIER};
         ast_node_t * val2;
         for (size_t i = 0; i < 2; i++) {
-            val = Vec_GetAt(node->as_expr.values, i);
+            val = nanbox_to_pointer(Vec_GetAt(node->as_expr.values, i));
             assert_int_equal(types[i], val->type);
             if (val->type == NODE_AND_EXPR) {
                 for (size_t j = 0; j < 2; j++) {
-                    val2 = Vec_GetAt(val->as_expr.values, j);
+                    val2 = nanbox_to_pointer(Vec_GetAt(val->as_expr.values, j));
                     assert_int_equal(NODE_IDENTIFIER, val2->type);
                 }
             }
@@ -713,12 +713,12 @@ void Test_ParseBinaryExpr(void) {
         ast_node_type_t types[] = {NODE_ARITH_EXPR, NODE_IDENTIFIER};
         ast_node_t * val2;
         for (size_t i = 0; i < 2; i++) {
-            val = Vec_GetAt(node->as_expr.values, i);
+            val = nanbox_to_pointer(Vec_GetAt(node->as_expr.values, i));
             assert_int_equal(types[i], val->type);
             if (val->type == NODE_ARITH_EXPR) {
                 assert_int_equal(3, Vec_GetLength(val->as_expr.values));
                 for (size_t j = 0; j < 3; j++) {
-                    val2 = Vec_GetAt(val->as_expr.values, j);
+                    val2 = nanbox_to_pointer(Vec_GetAt(val->as_expr.values, j));
                     assert_int_equal(NODE_IDENTIFIER, val2->type);
                 }
             }
@@ -740,17 +740,17 @@ void Test_ParseBinaryExpr(void) {
         ast_node_type_t types[] = {NODE_IDENTIFIER, NODE_ARITH_EXPR};
         ast_node_t * val2, * val3;
         for (size_t i = 0; i < 2; i++) {
-            val = Vec_GetAt(node->as_expr.values, i);
+            val = nanbox_to_pointer(Vec_GetAt(node->as_expr.values, i));
             assert_int_equal(types[i], val->type);
             if (val->type == NODE_ARITH_EXPR) {
                 assert_int_equal(2, Vec_GetLength(val->as_expr.values));
                 for (size_t j = 0; j < 2; j++) {
-                    val2 = Vec_GetAt(val->as_expr.values, j);
+                    val2 = nanbox_to_pointer(Vec_GetAt(val->as_expr.values, j));
                     assert_int_equal(types[j], val2->type);
                     if (val2->type == NODE_ARITH_EXPR) {
                         assert_int_equal(2, Vec_GetLength(val2->as_expr.values));
                         for (size_t k = 0; k < 2; k++) {
-                            val3 = Vec_GetAt(val2->as_expr.values, k);
+                            val3 = nanbox_to_pointer(Vec_GetAt(val2->as_expr.values, k));
                             assert_int_equal(NODE_IDENTIFIER, val3->type);
                         }
                     }
@@ -1258,7 +1258,8 @@ void Test_ParseObjLitteral(void) {
     node = Parser_ParseObjLitteral(parser);
     assert_true(node != NULL);
     assert_int_equal(1, Vec_GetLength(node->as_obj_litteral.obj_fields));
-    assert_int_equal(NODE_OBJ_FIELD_INIT, ((ast_node_t *)Vec_GetAt(node->as_obj_litteral.obj_fields, 0))->type);
+    assert_int_equal(NODE_OBJ_FIELD_INIT, ((ast_node_t *)nanbox_to_pointer(
+            Vec_GetAt(node->as_obj_litteral.obj_fields, 0)))->type);
     ASTNode_Free(node);
     Parser_Free(parser);
 
@@ -1268,7 +1269,8 @@ void Test_ParseObjLitteral(void) {
     node = Parser_ParseObjLitteral(parser);
     assert_true(node != NULL);
     assert_int_equal(1, Vec_GetLength(node->as_obj_litteral.obj_fields));
-    assert_int_equal(NODE_OBJ_MSG_DEF, ((ast_node_t *)Vec_GetAt(node->as_obj_litteral.obj_fields, 0))->type);
+    assert_int_equal(NODE_OBJ_MSG_DEF, ((ast_node_t *)nanbox_to_pointer(
+            Vec_GetAt(node->as_obj_litteral.obj_fields, 0)))->type);
     ASTNode_Free(node);
     Parser_Free(parser);
 
@@ -1278,7 +1280,8 @@ void Test_ParseObjLitteral(void) {
     node = Parser_ParseObjLitteral(parser);
     assert_true(node != NULL);
     assert_int_equal(1, Vec_GetLength(node->as_obj_litteral.obj_fields));
-    assert_int_equal(NODE_OBJ_MSG_DEF, ((ast_node_t *)Vec_GetAt(node->as_obj_litteral.obj_fields, 0))->type);
+    assert_int_equal(NODE_OBJ_MSG_DEF, ((ast_node_t *)nanbox_to_pointer(
+            Vec_GetAt(node->as_obj_litteral.obj_fields, 0)))->type);
     ASTNode_Free(node);
     Parser_Free(parser);
 
@@ -1288,8 +1291,10 @@ void Test_ParseObjLitteral(void) {
     node = Parser_ParseObjLitteral(parser);
     assert_true(node != NULL);
     assert_int_equal(2, Vec_GetLength(node->as_obj_litteral.obj_fields));
-    assert_int_equal(NODE_OBJ_FIELD_INIT, ((ast_node_t *)Vec_GetAt(node->as_obj_litteral.obj_fields, 0))->type);
-    assert_int_equal(NODE_OBJ_FIELD_INIT, ((ast_node_t *)Vec_GetAt(node->as_obj_litteral.obj_fields, 1))->type);
+    assert_int_equal(NODE_OBJ_FIELD_INIT, ((ast_node_t *)nanbox_to_pointer(
+            Vec_GetAt(node->as_obj_litteral.obj_fields, 0)))->type);
+    assert_int_equal(NODE_OBJ_FIELD_INIT, ((ast_node_t *)nanbox_to_pointer(
+            Vec_GetAt(node->as_obj_litteral.obj_fields, 1)))->type);
     ASTNode_Free(node);
     Parser_Free(parser);
 
@@ -1299,8 +1304,10 @@ void Test_ParseObjLitteral(void) {
     node = Parser_ParseObjLitteral(parser);
     assert_true(node != NULL);
     assert_int_equal(2, Vec_GetLength(node->as_obj_litteral.obj_fields));
-    assert_int_equal(NODE_OBJ_FIELD_INIT, ((ast_node_t *)Vec_GetAt(node->as_obj_litteral.obj_fields, 0))->type);
-    assert_int_equal(NODE_OBJ_FIELD_INIT, ((ast_node_t *)Vec_GetAt(node->as_obj_litteral.obj_fields, 1))->type);
+    assert_int_equal(NODE_OBJ_FIELD_INIT, ((ast_node_t *)nanbox_to_pointer(
+            Vec_GetAt(node->as_obj_litteral.obj_fields, 0)))->type);
+    assert_int_equal(NODE_OBJ_FIELD_INIT, ((ast_node_t *)nanbox_to_pointer(
+            Vec_GetAt(node->as_obj_litteral.obj_fields, 1)))->type);
     ASTNode_Free(node);
     Parser_Free(parser);
 
@@ -1310,9 +1317,12 @@ void Test_ParseObjLitteral(void) {
     node = Parser_ParseObjLitteral(parser);
     assert_true(node != NULL);
     assert_int_equal(3, Vec_GetLength(node->as_obj_litteral.obj_fields));
-    assert_int_equal(NODE_OBJ_MSG_DEF, ((ast_node_t *)Vec_GetAt(node->as_obj_litteral.obj_fields, 0))->type);
-    assert_int_equal(NODE_OBJ_FIELD_INIT, ((ast_node_t *)Vec_GetAt(node->as_obj_litteral.obj_fields, 1))->type);
-    assert_int_equal(NODE_OBJ_FIELD_INIT, ((ast_node_t *)Vec_GetAt(node->as_obj_litteral.obj_fields, 2))->type);
+    assert_int_equal(NODE_OBJ_MSG_DEF, ((ast_node_t *)nanbox_to_pointer(
+            Vec_GetAt(node->as_obj_litteral.obj_fields, 0)))->type);
+    assert_int_equal(NODE_OBJ_FIELD_INIT, ((ast_node_t *)nanbox_to_pointer(
+            Vec_GetAt(node->as_obj_litteral.obj_fields, 1)))->type);
+    assert_int_equal(NODE_OBJ_FIELD_INIT, ((ast_node_t *)nanbox_to_pointer(
+            Vec_GetAt(node->as_obj_litteral.obj_fields, 2)))->type);
     ASTNode_Free(node);
     Parser_Free(parser);
 

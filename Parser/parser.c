@@ -15,6 +15,7 @@
 #include "misc.h"
 #include "ast.h"
 #include "location.h"
+#include "nanbox.h"
 
 /**
  * Give some lookahead on the lexer token stream
@@ -30,12 +31,12 @@ static token_t * Parser_NextToken(parser_t * parser, bool preserve_whitespaces,
 
     do {
         if (parser->token_lookahead_index < Vec_GetLength(parser->token_lookahead)) {
-            token = Vec_GetAt(parser->token_lookahead, parser->token_lookahead_index);
+            token = nanbox_to_pointer(Vec_GetAt(parser->token_lookahead, parser->token_lookahead_index));
             parser->token_lookahead_index++;
         } else {
             token = Lex_NextToken(parser->lexer, true, true);
             if (token) {
-                Vec_Append(parser->token_lookahead, token);
+                Vec_Append(parser->token_lookahead, nanbox_from_pointer(token));
                 parser->token_lookahead_index++;
             } else if (Lex_GetStatus(parser->lexer) == LEX_ERROR) {
                 parser->error = Lex_GetError(parser->lexer);
@@ -61,7 +62,7 @@ static void Parser_ConsumeLookahead(parser_t * parser) {
     token_t * token;
 
     while (Vec_GetLength(parser->token_lookahead)) {
-        token = Vec_Pop(parser->token_lookahead);
+        token = nanbox_to_pointer(Vec_Pop(parser->token_lookahead));
         if (token) Token_Free(token);
     }
     parser->token_lookahead_index = 0;
@@ -71,7 +72,8 @@ static loc_t Parser_CurrentLocation(parser_t * parser) {
     loc_t loc;
 
     if (parser->token_lookahead_index < Vec_GetLength(parser->token_lookahead)) {
-        loc = ((token_t *)Vec_GetAt(parser->token_lookahead, parser->token_lookahead_index))->span.start;
+        loc = ((token_t *)nanbox_to_pointer(
+                Vec_GetAt(parser->token_lookahead, parser->token_lookahead_index)))->span.start;
     } else {
         loc = parser->lexer->pos;
     }
@@ -162,7 +164,7 @@ ast_node_t * Parser_CreateAST(parser_t * parser, bool module_scope) {
 
     while ((value = Parser_ParseStatement(parser, module_scope))
             && Parser_GetStatus(parser) == PARSER_OK) {
-        Vec_Append(node->as_root.statements, value);
+        Vec_Append(node->as_root.statements, nanbox_from_pointer(value));
     }
     
     if (Parser_GetStatus(parser) == PARSER_ERROR) {
@@ -278,7 +280,7 @@ ast_node_t * Parser_ParseObjFieldName(parser_t * parser) {
                     if (!ident) {
                         error_state = NO_IDENT;
                     } else {
-                        Vec_Append(node->as_obj_field_name.components, ident);
+                        Vec_Append(node->as_obj_field_name.components, nanbox_from_pointer(ident));
                         state = GOT_IDENT;
                     }
                 }
@@ -294,7 +296,7 @@ ast_node_t * Parser_ParseObjFieldName(parser_t * parser) {
                 if (!ident) {
                     error_state = NO_IDENT;
                 } else {
-                    Vec_Append(node->as_obj_field_name.components, ident);
+                    Vec_Append(node->as_obj_field_name.components, nanbox_from_pointer(ident));
                     state = GOT_IDENT2;
                 }
                 break;
@@ -380,7 +382,7 @@ ast_node_t * Parser_ParseBinaryExpr(parser_t * parser, ast_node_type_t type) {
             }
             must_loop = false;
         } else {
-            Vec_Append(node->as_expr.values, value);
+            Vec_Append(node->as_expr.values, nanbox_from_pointer(value));
             tok = Parser_NextToken(parser, false, false);
             if (!tok) {
                 must_loop = false;
@@ -450,7 +452,7 @@ ast_node_t * Parser_ParseBinaryExpr(parser_t * parser, ast_node_type_t type) {
                     } else if (i > 0 && node->as_expr.op != tok->type) {
                         reset = true;
                         parser->token_lookahead_index = looahead_index;
-                        ast_node_t * node2 = Vec_Pop(node->as_expr.values);
+                        ast_node_t * node2 = nanbox_to_pointer(Vec_Pop(node->as_expr.values));
                         ASTNode_Free(node2);
                     }
                 } else {
@@ -469,7 +471,7 @@ ast_node_t * Parser_ParseBinaryExpr(parser_t * parser, ast_node_type_t type) {
          * we shorten the ast tree by skipping nodes that were
          * the only children of their parent
          */
-        ast_node_t * node2 = Vec_Pop(node->as_expr.values);
+        ast_node_t * node2 = nanbox_to_pointer(Vec_Pop(node->as_expr.values));
         ASTNode_Free(node);
         node = node2;
     }
@@ -515,7 +517,7 @@ ast_node_t * Parser_ParseMsgPassExpr(parser_t * parser) {
                 value = Parser_ParseAtomExpr(parser);
                 if (value) {
                     state = GOT_ATOM_EXPR;
-                    Vec_Append(node->as_msg_pass_expr.components, value);
+                    Vec_Append(node->as_msg_pass_expr.components, nanbox_from_pointer(value));
                 } else {
                     error_state = NO_ATOM_EXPR;
                 }
@@ -533,7 +535,7 @@ ast_node_t * Parser_ParseMsgPassExpr(parser_t * parser) {
                     value = Parser_ParseIdentifier(parser, false);
                     if (value) {
                         if (got_spacing) {
-                            Vec_Append(node->as_msg_pass_expr.components, value);
+                            Vec_Append(node->as_msg_pass_expr.components, nanbox_from_pointer(value));
                             state = GOT_IDENT;
                         } else {
                             error_state = NO_SPACE_BEFORE_MESSAGE;
@@ -560,7 +562,7 @@ ast_node_t * Parser_ParseMsgPassExpr(parser_t * parser) {
                 value = Parser_ParseAtomExpr(parser);
                 if (value) {
                     state = GOT_ATOM_EXPR2;
-                    Vec_Append(node->as_msg_pass_expr.components, value);
+                    Vec_Append(node->as_msg_pass_expr.components, nanbox_from_pointer(value));
                 } else {
                     error_state = NO_ATOM_EXPR;
                 }
@@ -570,7 +572,7 @@ ast_node_t * Parser_ParseMsgPassExpr(parser_t * parser) {
             case GOT_ATOM_EXPR3:
                 value = Parser_ParseIdentifier(parser, false);
                 if (value) {
-                    Vec_Append(node->as_msg_pass_expr.components, value);
+                    Vec_Append(node->as_msg_pass_expr.components, nanbox_from_pointer(value));
                     state = GOT_IDENT2;
                 } else {
                     must_loop = false;
@@ -591,7 +593,7 @@ ast_node_t * Parser_ParseMsgPassExpr(parser_t * parser) {
                 value = Parser_ParseAtomExpr(parser);
                 if (value) {
                     state = GOT_ATOM_EXPR3;
-                    Vec_Append(node->as_msg_pass_expr.components, value);
+                    Vec_Append(node->as_msg_pass_expr.components, nanbox_from_pointer(value));
                 } else {
                     error_state = NO_ATOM_EXPR;
                 }
@@ -638,7 +640,7 @@ ast_node_t * Parser_ParseMsgPassExpr(parser_t * parser) {
          * we shorten the ast tree by skipping nodes that were
          * the only children of their parent
          */
-        ast_node_t * node2 = Vec_Pop(node->as_msg_pass_expr.components);
+        ast_node_t * node2 = nanbox_to_pointer(Vec_Pop(node->as_msg_pass_expr.components));
         ASTNode_Free(node);
         node = node2;
     }
@@ -915,7 +917,7 @@ ast_node_t * Parser_ParseDottedExpr(parser_t * parser) {
                 if (!value) {
                     error_state = NO_IDENT;
                 } else {
-                    Vec_Append(node->as_dotted_expr.components, value);
+                    Vec_Append(node->as_dotted_expr.components, nanbox_from_pointer(value));
                     state = GOT_IDENT;
                 }
                 break;
@@ -930,7 +932,7 @@ ast_node_t * Parser_ParseDottedExpr(parser_t * parser) {
                         state = GOT_ARRAY_ACCESS2;
                     }
                 } else {
-                    Vec_Append(node->as_dotted_expr.components, value);
+                    Vec_Append(node->as_dotted_expr.components, nanbox_from_pointer(value));
                     state = GOT_ARRAY_ACCESS;
                 }
                 break;
@@ -944,7 +946,7 @@ ast_node_t * Parser_ParseDottedExpr(parser_t * parser) {
                         state = GOT_ARRAY_ACCESS2;
                     }
                 } else {
-                    Vec_Append(node->as_dotted_expr.components, value);
+                    Vec_Append(node->as_dotted_expr.components, nanbox_from_pointer(value));
                     state = GOT_ARRAY_ACCESS;
                 }
                 break;
@@ -966,7 +968,7 @@ ast_node_t * Parser_ParseDottedExpr(parser_t * parser) {
                 if (!value) {
                     error_state = NO_OBJ_FIELD_NAME;
                 } else {
-                    Vec_Append(node->as_dotted_expr.components, value);
+                    Vec_Append(node->as_dotted_expr.components, nanbox_from_pointer(value));
                     state = GOT_OBJ_FIELD_NAME;
                 }
                 break;
@@ -997,7 +999,7 @@ ast_node_t * Parser_ParseDottedExpr(parser_t * parser) {
          * we shorten the ast tree by skipping nodes that were
          * the only children of their parent
          */
-        ast_node_t * node2 = Vec_Pop(node->as_dotted_expr.components);
+        ast_node_t * node2 = nanbox_to_pointer(Vec_Pop(node->as_dotted_expr.components));
         ASTNode_Free(node);
         node = node2;
     }
@@ -1134,7 +1136,7 @@ ast_node_t * Parser_ParseUnaryExpr(parser_t * parser) {
                     parser->status = PARSER_ERROR;
                 }
             } else {
-                Vec_Append(node->as_expr.values, value);
+                Vec_Append(node->as_expr.values, nanbox_from_pointer(value));
             }
         } else {
             Parser_PushBackTokenList(parser);
@@ -1245,7 +1247,7 @@ ast_node_t * Parser_ParseArrayLitteral(parser_t * parser) {
             case GOT_LSBRACKET:
                 value = Parser_ParseExpr(parser);
                 if (value) {
-                    Vec_Append(node->as_array_litteral.items, value);
+                    Vec_Append(node->as_array_litteral.items, nanbox_from_pointer(value));
                     state = GOT_EXPR;
                 } else if (Parser_GetStatus(parser) == PARSER_ERROR) {
                     error_state = EXPR_ERROR;
@@ -1362,7 +1364,7 @@ ast_node_t * Parser_ParseBlock(parser_t * parser) {
             case GOT_PIPE:
                 value = Parser_ParseIdentifier(parser, false);
                 if (value) {
-                    Vec_Append(node->as_block.params, value);
+                    Vec_Append(node->as_block.params, nanbox_from_pointer(value));
                     state = GOT_IDENT;
                 } else {
                     error_state = NO_IDENT;
@@ -1372,7 +1374,7 @@ ast_node_t * Parser_ParseBlock(parser_t * parser) {
             case GOT_IDENT:
                 value = Parser_ParseIdentifier(parser, false);
                 if (value) {
-                    Vec_Append(node->as_block.params, value);
+                    Vec_Append(node->as_block.params, nanbox_from_pointer(value));
                     state = GOT_IDENT;
                 } else if (Parser_GetStatus(parser) == PARSER_ERROR) {
                     error_state = NO_IDENT;
@@ -1390,7 +1392,7 @@ ast_node_t * Parser_ParseBlock(parser_t * parser) {
             case PARSE_STATEMENT:
                 value = Parser_ParseStatement(parser, false);
                 if (value) {
-                    Vec_Append(node->as_block.statements, value);
+                    Vec_Append(node->as_block.statements, nanbox_from_pointer(value));
                     state = GOT_STATEMENT;
                 } else {
                     error_state = NO_STATEMENT;
@@ -1400,7 +1402,7 @@ ast_node_t * Parser_ParseBlock(parser_t * parser) {
             case GOT_STATEMENT:
                 value = Parser_ParseStatement(parser, false);
                 if (value) {
-                    Vec_Append(node->as_block.statements, value);
+                    Vec_Append(node->as_block.statements, nanbox_from_pointer(value));
                     state = GOT_STATEMENT;
                 } else if (Parser_GetStatus(parser) == PARSER_ERROR) {
                     error_state = NO_STATEMENT;
@@ -1503,7 +1505,7 @@ ast_node_t * Parser_ParseObjMsgDef(parser_t * parser) {
                 if (!value) {
                     error_state = NO_IDENT;
                 } else {
-                    Vec_Append(node->as_obj_msg_def.selector, value);
+                    Vec_Append(node->as_obj_msg_def.selector, nanbox_from_pointer(value));
                     state = GOT_IDENT;
                 }
                 break;
@@ -1524,7 +1526,7 @@ ast_node_t * Parser_ParseObjMsgDef(parser_t * parser) {
                 if (!value) {
                     error_state = NO_IDENT;
                 } else {
-                    Vec_Append(node->as_obj_msg_def.selector, value);
+                    Vec_Append(node->as_obj_msg_def.selector, nanbox_from_pointer(value));
                     state = GOT_IDENT2;
                 }
                 break;
@@ -1541,7 +1543,7 @@ ast_node_t * Parser_ParseObjMsgDef(parser_t * parser) {
                         state = GOT_LCBRACKET;
                     }
                 } else {
-                    Vec_Append(node->as_obj_msg_def.selector, value);
+                    Vec_Append(node->as_obj_msg_def.selector, nanbox_from_pointer(value));
                     state = GOT_IDENT3;
                 }
                 break;
@@ -1562,7 +1564,7 @@ ast_node_t * Parser_ParseObjMsgDef(parser_t * parser) {
                 if (!value) {
                     error_state = NO_IDENT;
                 } else {
-                    Vec_Append(node->as_obj_msg_def.selector, value);
+                    Vec_Append(node->as_obj_msg_def.selector, nanbox_from_pointer(value));
                     state = GOT_IDENT4;
                 }
                 break;
@@ -1578,7 +1580,7 @@ ast_node_t * Parser_ParseObjMsgDef(parser_t * parser) {
                         state = GOT_LCBRACKET;
                     }
                 } else {
-                    Vec_Append(node->as_obj_msg_def.selector, value);
+                    Vec_Append(node->as_obj_msg_def.selector, nanbox_from_pointer(value));
                     state = GOT_IDENT3;
                 }
                 break;
@@ -1598,7 +1600,7 @@ ast_node_t * Parser_ParseObjMsgDef(parser_t * parser) {
                     error_state = STATEMENT_ERROR;
                 } else {
                     state = GOT_STATEMENT;
-                    Vec_Append(node->as_obj_msg_def.statements, value);
+                    Vec_Append(node->as_obj_msg_def.statements, nanbox_from_pointer(value));
                 }
                 break;
             
@@ -1786,12 +1788,12 @@ ast_node_t * Parser_ParseObjLitteral(parser_t * parser) {
             case GOT_COMMA:
                 value = Parser_ParseObjMsgDef(parser);
                 if (value) {
-                    Vec_Append(node->as_obj_litteral.obj_fields, value);
+                    Vec_Append(node->as_obj_litteral.obj_fields, nanbox_from_pointer(value));
                     state = GOT_MEMBER;
                 } else if (Parser_GetStatus(parser) == PARSER_OK) {
                     value = Parser_ParseObjFieldInit(parser);
                     if (value) {
-                        Vec_Append(node->as_obj_litteral.obj_fields, value);
+                        Vec_Append(node->as_obj_litteral.obj_fields, nanbox_from_pointer(value));
                         state = GOT_MEMBER;
                     } else if (Parser_GetStatus(parser) == PARSER_OK) {
                         tok = Parser_NextToken(parser, false, false);

@@ -11,6 +11,10 @@
 #include "vector.h"
 #include "str.h"
 
+static void ASTNode_VecFree(nanbox_t item) {
+    ASTNode_Free(nanbox_to_pointer(item));
+}
+
 /**
  * Initialize a node by its type
  * !Only allocates vectors!
@@ -102,7 +106,7 @@ void ASTNode_Free(ast_node_t * node) {
     if (node) {
         switch (node->type) {
             case NODE__ROOT_:
-                Vec_ForEach(node->as_root.statements, (void (*)(void *))ASTNode_Free);
+                Vec_ForEach(node->as_root.statements, ASTNode_VecFree);
                 Vec_Free(node->as_root.statements);
                 break;
 
@@ -125,7 +129,7 @@ void ASTNode_Free(ast_node_t * node) {
                 break;
 
             case NODE_OBJ_FIELD_NAME:
-                Vec_ForEach(node->as_obj_field_name.components, (void (*)(void *))ASTNode_Free);
+                Vec_ForEach(node->as_obj_field_name.components, ASTNode_VecFree);
                 Vec_Free(node->as_obj_field_name.components);
                 break;
 
@@ -135,26 +139,26 @@ void ASTNode_Free(ast_node_t * node) {
                 break;
 
             case NODE_OBJ_MSG_DEF:
-                Vec_ForEach(node->as_obj_msg_def.statements, (void (*)(void *))ASTNode_Free);
-                Vec_ForEach(node->as_obj_msg_def.selector, (void (*)(void *))ASTNode_Free);
+                Vec_ForEach(node->as_obj_msg_def.statements, ASTNode_VecFree);
+                Vec_ForEach(node->as_obj_msg_def.selector, ASTNode_VecFree);
                 Vec_Free(node->as_obj_msg_def.statements);
                 Vec_Free(node->as_obj_msg_def.selector);
                 break;
 
             case NODE_OBJ_LITTERAL:
-                Vec_ForEach(node->as_obj_litteral.obj_fields, (void (*)(void *))ASTNode_Free);
+                Vec_ForEach(node->as_obj_litteral.obj_fields, ASTNode_VecFree);
                 Vec_Free(node->as_obj_litteral.obj_fields);
                 break;
 
             case NODE_ARRAY_LITTERAL:
-                Vec_ForEach(node->as_array_litteral.items, (void (*)(void *))ASTNode_Free);
+                Vec_ForEach(node->as_array_litteral.items, ASTNode_VecFree);
                 Vec_Free(node->as_array_litteral.items);
                 break;
 
             case NODE_BLOCK:
-                Vec_ForEach(node->as_block.params, (void (*)(void *))ASTNode_Free);
+                Vec_ForEach(node->as_block.params, ASTNode_VecFree);
                 Vec_Free(node->as_block.params);
-                Vec_ForEach(node->as_block.statements, (void (*)(void *))ASTNode_Free);
+                Vec_ForEach(node->as_block.statements, ASTNode_VecFree);
                 Vec_Free(node->as_block.statements);
                 break;
 
@@ -163,12 +167,12 @@ void ASTNode_Free(ast_node_t * node) {
                 break;
 
             case NODE_DOTTED_EXPR:
-                Vec_ForEach(node->as_dotted_expr.components, (void (*)(void *))ASTNode_Free);
+                Vec_ForEach(node->as_dotted_expr.components, ASTNode_VecFree);
                 Vec_Free(node->as_dotted_expr.components);
                 break;
 
             case NODE_MSG_PASS_EXPR:
-                Vec_ForEach(node->as_msg_pass_expr.components, (void (*)(void *))ASTNode_Free);
+                Vec_ForEach(node->as_msg_pass_expr.components, ASTNode_VecFree);
                 Vec_Free(node->as_msg_pass_expr.components);
                 break;
 
@@ -180,7 +184,7 @@ void ASTNode_Free(ast_node_t * node) {
             case NODE_TERM_EXPR:
             case NODE_FACTOR_EXPR:
             case NODE_UNARY_EXPR:
-                Vec_ForEach(node->as_expr.values, (void (*)(void *))ASTNode_Free);
+                Vec_ForEach(node->as_expr.values, ASTNode_VecFree);
                 Vec_Free(node->as_expr.values);
                 break;
 
@@ -220,7 +224,8 @@ static string * ASTNode_ToStringIndent(ast_node_t * node, size_t indent) {
             for (size_t i = 0; i < Vec_GetLength(node->as_root.statements); i++) {
                 str2 = ASTNode_Spaces(indent + 4);
                 APPEND_FREE(str, str2);
-                str2 = ASTNode_ToStringIndent(Vec_GetAt(node->as_root.statements, i), indent + 4);
+                str2 = ASTNode_ToStringIndent(nanbox_to_pointer(
+                        Vec_GetAt(node->as_root.statements, i)), indent + 4);
                 APPEND_FREE(str, str2);
                 str2 = Str_New(i != Vec_GetLength(node->as_root.statements) - 1 ? ",\n" : "\n");
                 APPEND_FREE(str, str2);
@@ -321,7 +326,8 @@ static string * ASTNode_ToStringIndent(ast_node_t * node, size_t indent) {
             for (size_t i = 0; i < Vec_GetLength(node->as_obj_field_name.components); i++) {
                 str2 = ASTNode_Spaces(indent + 4);
                 APPEND_FREE(str, str2);
-                str2 = ASTNode_ToStringIndent(Vec_GetAt(node->as_obj_field_name.components, i), indent + 4);
+                str2 = ASTNode_ToStringIndent(nanbox_to_pointer(
+                        Vec_GetAt(node->as_obj_field_name.components, i)), indent + 4);
                 APPEND_FREE(str, str2);
                 str2 = Str_New(i != Vec_GetLength(node->as_obj_field_name.components) -1 ? ",\n" : "\n");
                 APPEND_FREE(str, str2);
@@ -371,7 +377,8 @@ static string * ASTNode_ToStringIndent(ast_node_t * node, size_t indent) {
             for (size_t i = 0; i < Vec_GetLength(node->as_obj_msg_def.selector); i++) {
                 str2 = ASTNode_Spaces(indent + 8);
                 APPEND_FREE(str, str2);
-                str2 = ASTNode_ToStringIndent(Vec_GetAt(node->as_obj_msg_def.selector, i), indent + 8);
+                str2 = ASTNode_ToStringIndent(nanbox_to_pointer(
+                        Vec_GetAt(node->as_obj_msg_def.selector, i)), indent + 8);
                 APPEND_FREE(str, str2);
                 str2 = Str_New(i != Vec_GetLength(node->as_obj_msg_def.selector) - 1 ? ",\n" : "\n");
                 APPEND_FREE(str, str2);
@@ -385,7 +392,8 @@ static string * ASTNode_ToStringIndent(ast_node_t * node, size_t indent) {
             for (size_t i = 0; i < Vec_GetLength(node->as_obj_msg_def.statements); i++) {
                 str2 = ASTNode_Spaces(indent + 4);
                 APPEND_FREE(str, str2);
-                str2 = ASTNode_ToStringIndent(Vec_GetAt(node->as_obj_msg_def.statements, i), indent + 4);
+                str2 = ASTNode_ToStringIndent(nanbox_to_pointer(
+                        Vec_GetAt(node->as_obj_msg_def.statements, i)), indent + 4);
                 APPEND_FREE(str, str2);
                 str2 = Str_New(i != Vec_GetLength(node->as_obj_msg_def.statements) - 1 ? ",\n" : "\n");
                 APPEND_FREE(str, str2);
@@ -403,7 +411,8 @@ static string * ASTNode_ToStringIndent(ast_node_t * node, size_t indent) {
             for (size_t i = 0; i < Vec_GetLength(node->as_obj_litteral.obj_fields); i++) {
                 str2 = ASTNode_Spaces(indent + 4);
                 APPEND_FREE(str, str2);
-                str2 = ASTNode_ToStringIndent(Vec_GetAt(node->as_obj_litteral.obj_fields, i), indent + 4);
+                str2 = ASTNode_ToStringIndent(nanbox_to_pointer(
+                        Vec_GetAt(node->as_obj_litteral.obj_fields, i)), indent + 4);
                 APPEND_FREE(str, str2);
                 str2 = Str_New(i != Vec_GetLength(node->as_obj_litteral.obj_fields) - 1 ? ",\n" : "\n");
                 APPEND_FREE(str, str2);
@@ -421,7 +430,8 @@ static string * ASTNode_ToStringIndent(ast_node_t * node, size_t indent) {
             for (size_t i = 0; i < Vec_GetLength(node->as_array_litteral.items); i++) {
                 str2 = ASTNode_Spaces(indent + 4);
                 APPEND_FREE(str, str2);
-                str2 = ASTNode_ToStringIndent(Vec_GetAt(node->as_array_litteral.items, i), indent + 4);
+                str2 = ASTNode_ToStringIndent(nanbox_to_pointer(
+                        Vec_GetAt(node->as_array_litteral.items, i)), indent + 4);
                 APPEND_FREE(str, str2);
                 str2 = Str_New(i != Vec_GetLength(node->as_array_litteral.items) - 1 ? ",\n" : "\n");
                 APPEND_FREE(str, str2);
@@ -444,7 +454,8 @@ static string * ASTNode_ToStringIndent(ast_node_t * node, size_t indent) {
             for (size_t i = 0; i < Vec_GetLength(node->as_block.params); i++) {
                 str2 = ASTNode_Spaces(indent + 8);
                 APPEND_FREE(str, str2);
-                str2 = ASTNode_ToStringIndent(Vec_GetAt(node->as_block.params, i), indent + 8);
+                str2 = ASTNode_ToStringIndent(nanbox_to_pointer(
+                        Vec_GetAt(node->as_block.params, i)), indent + 8);
                 APPEND_FREE(str, str2);
                 str2 = Str_New(i != Vec_GetLength(node->as_block.params) - 1 ? ",\n" : "\n");
                 APPEND_FREE(str, str2);
@@ -458,7 +469,8 @@ static string * ASTNode_ToStringIndent(ast_node_t * node, size_t indent) {
             for (size_t i = 0; i < Vec_GetLength(node->as_block.statements); i++) {
                 str2 = ASTNode_Spaces(indent + 4);
                 APPEND_FREE(str, str2);
-                str2 = ASTNode_ToStringIndent(Vec_GetAt(node->as_block.statements, i), indent + 4);
+                str2 = ASTNode_ToStringIndent(nanbox_to_pointer(
+                        Vec_GetAt(node->as_block.statements, i)), indent + 4);
                 APPEND_FREE(str, str2);
                 str2 = Str_New(i != Vec_GetLength(node->as_block.statements) - 1 ? ",\n" : "\n");
                 APPEND_FREE(str, str2);
@@ -492,7 +504,8 @@ static string * ASTNode_ToStringIndent(ast_node_t * node, size_t indent) {
             for (size_t i = 0; i < Vec_GetLength(node->as_dotted_expr.components); i++) {
                 str2 = ASTNode_Spaces(indent + 4);
                 APPEND_FREE(str, str2);
-                str2 = ASTNode_ToStringIndent(Vec_GetAt(node->as_dotted_expr.components, i), indent + 4);
+                str2 = ASTNode_ToStringIndent(nanbox_to_pointer(
+                        Vec_GetAt(node->as_dotted_expr.components, i)), indent + 4);
                 APPEND_FREE(str, str2);
                 str2 = Str_New(i != Vec_GetLength(node->as_dotted_expr.components) - 1 ? ",\n" : "\n");
                 APPEND_FREE(str, str2);
@@ -514,7 +527,8 @@ static string * ASTNode_ToStringIndent(ast_node_t * node, size_t indent) {
                     str2 = Str_New("receiver=");
                     APPEND_FREE(str, str2);
                 }
-                str2 = ASTNode_ToStringIndent(Vec_GetAt(node->as_msg_pass_expr.components, i), indent + 4);
+                str2 = ASTNode_ToStringIndent(nanbox_to_pointer(
+                    Vec_GetAt(node->as_msg_pass_expr.components, i)), indent + 4);
                 APPEND_FREE(str, str2);
                 str2 = Str_New(i != Vec_GetLength(node->as_dotted_expr.components) - 1 ? ",\n" : "\n");
                 APPEND_FREE(str, str2);
@@ -532,7 +546,8 @@ static string * ASTNode_ToStringIndent(ast_node_t * node, size_t indent) {
             for (size_t i = 0; i < Vec_GetLength(node->as_expr.values); i++) {
                 str2 = ASTNode_Spaces(indent + 4);
                 APPEND_FREE(str, str2);
-                str2 = ASTNode_ToStringIndent(Vec_GetAt(node->as_expr.values, i), indent + 4);
+                str2 = ASTNode_ToStringIndent(nanbox_to_pointer(
+                    Vec_GetAt(node->as_expr.values, i)), indent + 4);
                 APPEND_FREE(str, str2);
                 str2 = Str_New(i != Vec_GetLength(node->as_dotted_expr.components) - 1 ? ",\n" : "\n");
                 APPEND_FREE(str, str2);
@@ -550,7 +565,8 @@ static string * ASTNode_ToStringIndent(ast_node_t * node, size_t indent) {
             for (size_t i = 0; i < Vec_GetLength(node->as_expr.values); i++) {
                 str2 = ASTNode_Spaces(indent + 4);
                 APPEND_FREE(str, str2);
-                str2 = ASTNode_ToStringIndent(Vec_GetAt(node->as_expr.values, i), indent + 4);
+                str2 = ASTNode_ToStringIndent(nanbox_to_pointer(
+                    Vec_GetAt(node->as_expr.values, i)), indent + 4);
                 APPEND_FREE(str, str2);
                 str2 = Str_New(i != Vec_GetLength(node->as_dotted_expr.components) - 1 ? ",\n" : "\n");
                 APPEND_FREE(str, str2);
@@ -577,7 +593,8 @@ static string * ASTNode_ToStringIndent(ast_node_t * node, size_t indent) {
             for (size_t i = 0; i < Vec_GetLength(node->as_expr.values); i++) {
                 str2 = ASTNode_Spaces(indent + 4);
                 APPEND_FREE(str, str2);
-                str2 = ASTNode_ToStringIndent(Vec_GetAt(node->as_expr.values, i), indent + 4);
+                str2 = ASTNode_ToStringIndent(nanbox_to_pointer(
+                        Vec_GetAt(node->as_expr.values, i)), indent + 4);
                 APPEND_FREE(str, str2);
                 str2 = Str_New(i != Vec_GetLength(node->as_dotted_expr.components) - 1 ? ",\n" : "\n");
                 APPEND_FREE(str, str2);
@@ -604,7 +621,8 @@ static string * ASTNode_ToStringIndent(ast_node_t * node, size_t indent) {
             for (size_t i = 0; i < Vec_GetLength(node->as_expr.values); i++) {
                 str2 = ASTNode_Spaces(indent + 4);
                 APPEND_FREE(str, str2);
-                str2 = ASTNode_ToStringIndent(Vec_GetAt(node->as_expr.values, i), indent + 4);
+                str2 = ASTNode_ToStringIndent(nanbox_to_pointer(
+                        Vec_GetAt(node->as_expr.values, i)), indent + 4);
                 APPEND_FREE(str, str2);
                 str2 = Str_New(i != Vec_GetLength(node->as_dotted_expr.components) - 1 ? ",\n" : "\n");
                 APPEND_FREE(str, str2);
@@ -631,7 +649,8 @@ static string * ASTNode_ToStringIndent(ast_node_t * node, size_t indent) {
             for (size_t i = 0; i < Vec_GetLength(node->as_expr.values); i++) {
                 str2 = ASTNode_Spaces(indent + 4);
                 APPEND_FREE(str, str2);
-                str2 = ASTNode_ToStringIndent(Vec_GetAt(node->as_expr.values, i), indent + 4);
+                str2 = ASTNode_ToStringIndent(nanbox_to_pointer(
+                        Vec_GetAt(node->as_expr.values, i)), indent + 4);
                 APPEND_FREE(str, str2);
                 str2 = Str_New(i != Vec_GetLength(node->as_dotted_expr.components) - 1 ? ",\n" : "\n");
                 APPEND_FREE(str, str2);
@@ -649,7 +668,8 @@ static string * ASTNode_ToStringIndent(ast_node_t * node, size_t indent) {
             for (size_t i = 0; i < Vec_GetLength(node->as_expr.values); i++) {
                 str2 = ASTNode_Spaces(indent + 4);
                 APPEND_FREE(str, str2);
-                str2 = ASTNode_ToStringIndent(Vec_GetAt(node->as_expr.values, i), indent + 4);
+                str2 = ASTNode_ToStringIndent(nanbox_to_pointer(
+                        Vec_GetAt(node->as_expr.values, i)), indent + 4);
                 APPEND_FREE(str, str2);
                 str2 = Str_New(i != Vec_GetLength(node->as_dotted_expr.components) - 1 ? ",\n" : "\n");
                 APPEND_FREE(str, str2);
@@ -667,7 +687,8 @@ static string * ASTNode_ToStringIndent(ast_node_t * node, size_t indent) {
             for (size_t i = 0; i < Vec_GetLength(node->as_expr.values); i++) {
                 str2 = ASTNode_Spaces(indent + 4);
                 APPEND_FREE(str, str2);
-                str2 = ASTNode_ToStringIndent(Vec_GetAt(node->as_expr.values, i), indent + 4);
+                str2 = ASTNode_ToStringIndent(nanbox_to_pointer(
+                        Vec_GetAt(node->as_expr.values, i)), indent + 4);
                 APPEND_FREE(str, str2);
                 str2 = Str_New(i != Vec_GetLength(node->as_dotted_expr.components) - 1 ? ",\n" : "\n");
                 APPEND_FREE(str, str2);
@@ -693,7 +714,8 @@ static string * ASTNode_ToStringIndent(ast_node_t * node, size_t indent) {
 
             str2 = ASTNode_Spaces(indent + 4);
             APPEND_FREE(str, str2);
-            str2 = ASTNode_ToStringIndent(Vec_GetAt(node->as_expr.values, 0), indent + 4);
+            str2 = ASTNode_ToStringIndent(nanbox_to_pointer(
+                    Vec_GetAt(node->as_expr.values, 0)), indent + 4);
             APPEND_FREE(str, str2);
             str2 = Str_New("\n");
             APPEND_FREE(str, str2);
