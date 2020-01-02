@@ -43,10 +43,24 @@ void Test_ArrayObjectAppendingPopping(void) {
     Object_DecRef(&arrayobject);
 }
 
+void Test_ArrayObjectSettingGetting(void) {
+    nanbox_t arrayobject;
+
+    arrayobject = ArrayObject_New();
+    ArrayObject_Append(arrayobject, nanbox_from_int(1));
+    ArrayObject_Append(arrayobject, nanbox_from_int(2));
+    assert_int_equal(2, ArrayObject_GetLength(arrayobject));
+    ArrayObject_SetAt(arrayobject, 1, nanbox_from_int(1337));
+    assert_int_equal(1337, nanbox_to_int(ArrayObject_GetAt(arrayobject, 1)));
+    assert_int_equal(2, ArrayObject_GetLength(arrayobject));
+
+    Object_DecRef(&arrayobject);
+}
+
 void Test_ArrayObjectTests(void) {
     test_fixture_start();
     run_test(Test_ArrayObjectCreation);
     run_test(Test_ArrayObjectAppendingPopping);
-    /// @todo add tests
+    run_test(Test_ArrayObjectSettingGetting);
     test_fixture_end();
 }
