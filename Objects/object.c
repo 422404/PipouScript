@@ -65,6 +65,16 @@ void Object_Free(nanbox_t * object) {
     }
 }
 
+void Object_AddTracker(nanbox_t object, object_tracker_t * object_tracker) {
+    if (nanbox_is_pointer(object)) {
+        object_t * obj_ptr = nanbox_to_pointer(object);
+        obj_ptr->object_tracker = object_tracker;
+    } else {
+        loc_t loc = {__LINE__ + 1, 0, __FILE__};
+        Err_Throw(Err_NewWithLocation("NaN boxed value is not an object", loc));
+    }
+}
+
 void Object_IncRef(nanbox_t object) {
     if (nanbox_is_pointer(object)) {
         object_t * obj_ptr = nanbox_to_pointer(object);

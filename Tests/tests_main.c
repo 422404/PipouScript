@@ -11,6 +11,7 @@
 #include "hashmap_tests.h"
 #include "object_tests.h"
 #include "arrayobject_tests.h"
+#include "object_tracker_tests.h"
 
 /**
  * Runs all tests
@@ -24,6 +25,7 @@ void Test_AllTests(void) {
     Test_HashMapTests();
     Test_ObjectTests();
     Test_ArrayObjectTests();
+    Test_ObjectTrackerTests();
 }
 
 /**

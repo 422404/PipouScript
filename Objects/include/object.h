@@ -10,6 +10,7 @@
 #include "vector.h"
 #include "nanbox.h"
 #include "objects_types.h"
+#include "object_tracker.h"
 
 typedef struct object_s object_t;
 
@@ -20,7 +21,8 @@ typedef struct object_s object_t;
     nanbox_t prototype; \
     bool freezed; \
     object_type_t type; \
-    OBJECT_CUSTOM_FREE_SIGNATURE(custom_free);
+    OBJECT_CUSTOM_FREE_SIGNATURE(custom_free); \
+    object_tracker_t * object_tracker;
 
 typedef struct object_s {
     OBJECT_HEAD
@@ -30,6 +32,7 @@ typedef struct object_s {
 
 nanbox_t Object_New(size_t object_size, OBJECT_CUSTOM_FREE_SIGNATURE(custom_free));
 void Object_Free(nanbox_t * object);
+void Object_AddTracker(nanbox_t object, object_tracker_t * object_tracker);
 void Object_IncRef(nanbox_t object);
 void Object_DecRef(nanbox_t * object);
 void Object_Freeze(nanbox_t object);
