@@ -68,7 +68,16 @@ void ArrayObject_SetAt(nanbox_t arrayobject, ssize_t index, nanbox_t item) {
     if (index < 0 || index > vec_size - 1) {
         /// @todo Raise exception
     } else {
+        // We must decrement the ref count of the previous value
+        nanbox_t old = Vec_GetAt(arrayobject_ptr->items, index);
+        if (nanbox_is_pointer(old)) {
+            Object_DecRef(&old);
+        }
         Vec_SetAt(arrayobject_ptr->items, index, item);
+        // We increment the ref count of the new object
+        if (nanbox_is_pointer(item)) {
+            Object_IncRef(item);
+        }
     }
 }
 
@@ -82,6 +91,10 @@ void ArrayObject_Append(nanbox_t arrayobject, nanbox_t item) {
     size_t length = nanbox_to_int(Object_GetField(arrayobject, LENGTH_FIELD));
     Object_SetField(arrayobject, LENGTH_FIELD, nanbox_from_int(length + 1));
     Vec_Append(arrayobject_ptr->items, item);
+    // We increment the ref count of the appended object
+    if (nanbox_is_pointer(item)) {
+        Object_IncRef(item);
+    }
 }
 
 /**
@@ -94,7 +107,12 @@ nanbox_t ArrayObject_Pop(nanbox_t arrayobject) {
     size_t length = nanbox_to_int(Object_GetField(arrayobject, LENGTH_FIELD));
     if (length > 1) {
         Object_SetField(arrayobject, LENGTH_FIELD, nanbox_from_int(length - 1));
-        return Vec_Pop(arrayobject_ptr->items);
+        nanbox_t item = Vec_Pop(arrayobject_ptr->items);
+        // We decrement the ref count of the popped object
+        if (nanbox_is_pointer(item)) {
+            Object_DecRef(&item);
+        }
+        return item;
     }
     /// @todo Raise exception
     return nanbox_null();
